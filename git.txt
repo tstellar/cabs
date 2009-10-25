@@ -1,0 +1,72 @@
+#Online help:
+http://www.spheredev.org/wiki/Git_for_the_lazy -This is a very good guide.
+http://git-scm.com/documentation - More documentation.
+
+#Create a new repository:
+git init
+
+#Copy someone else's repository:
+git clone user@host:/path/to/remote/repository /path/to/local/repository
+
+#Set your name and e-mail address to identify who is making the commits:
+git config --global user.name John Doe
+git config --global user.email john@gmail.com
+
+#Add a file to the repository(You still need to commit this file!):
+git add file.java
+
+#View all of the files that have been changed:
+git status
+
+#View individual changes for each file:
+git diff
+
+#Commit a single file:
+git commit file.java
+
+#Commit everything:
+git commit -a
+
+#Create a new branch:
+git branch branch_name
+
+#Check out a branch:
+git checkout branch_name
+
+#Undo uncommited changes in a file:
+git checkout file.java
+
+#Undo all uncommited changes:
+git reset --hard
+
+#REBASE
+#You should use this if all of your recent commits are only in your tree.
+#This allows you to get up to date with someone else's tree.
+#Here is how it works:
+#YOU	REMOTE		YOU(AFTER REBASE)
+#Y2	R4		Y2
+#Y1	R3		Y1
+#R2	R2		R4
+#R1	R1		R3
+#			R2
+#			R1
+git rebase repo branch
+
+#PULL/MERGE
+#You should use this if someone else has pulled from you recently, and you want
+#to get up to date.  Here is how it works:
+#YOU	REMOTE		YOU(AFTER PULL)
+#Y2	R4		MERGE COMMIT(If neccessary)
+#Y1	R3		R4
+#R2	R2		R3
+#R1	R1		Y2
+#			Y1
+#			R2
+#			R1
+git pull repo branch
+
+#REBASE vs PULL/MERGE:
+#If you ask someone to pull from you, you should always rebase with their repo
+#first (git pull --rebase repo branch).  Generally, you should avoid doing a
+#regular PULL/MERGE (git pull repo branch) unless the differences between
+#the two trees are very large.
