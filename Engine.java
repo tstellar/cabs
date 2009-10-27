@@ -15,10 +15,10 @@ public class Engine{
 		}
 	}
 
-	public void go(){
+	public void go(int turn){
 		for(int i=0; i< cells.length; i++){
 			for(int j=0; j< cells[i].length; j++){
-				cells[i][j].go();
+				cells[i][j].go(turn);
 			}
 		}
 	}
@@ -71,7 +71,7 @@ public class Engine{
 		engine.placeAgents(5);
 		engine.print();
 		for(int i=0; i< 8; i++){
-			engine.go();
+			engine.go(i);
 			engine.print();
 		}
 	}

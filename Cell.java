@@ -14,10 +14,10 @@ public class Cell{
 	}
 
 
-	public void go(){
+	public void go(int turn){
 		int totalAgents = agents.size();
 		for(int i=0; i< totalAgents; i++){
-			agents.get(i).go();
+			agents.get(i).go(turn);
 		}
 	}
 	
@@ -26,6 +26,7 @@ public class Cell{
 	}
 
 	public void add(Agent agent){
+		agent.setCell(this);
 		agents.add(agent);
 	}
 

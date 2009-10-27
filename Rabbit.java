@@ -2,14 +2,22 @@
 public class Rabbit implements Agent{
 
 	Cell cell;
+	int turn = 0;
 	public Rabbit(Cell cell){
 		this.cell = cell;
 	}
-	public void go(){
-		move(1,0);
+	public void go(int turn){
+		if(this.turn == turn){
+			move(1,0);
+			this.turn++;
+		}
 	}
 
 	public void move(int x, int y){
 		cell.move(this, x, y);
+	}
+	
+	public void setCell(Cell cell){
+		this.cell = cell;
 	}
 }
