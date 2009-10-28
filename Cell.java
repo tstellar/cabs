@@ -17,7 +17,7 @@ public class Cell{
 	public void go(int turn){
 		int totalAgents = agents.size();
 		for(int i=0; i< totalAgents; i++){
-			agents.get(i).go(turn);
+			agents.get(i).start(turn);
 		}
 	}
 	

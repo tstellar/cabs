@@ -4,7 +4,7 @@ public abstract class Agent{
 	Cell cell;
 	int turn = 0;
 	
-	public abstract void go(int turn);
+	public abstract void go();
 /*	public void look();
 	public void reproduce();
 	public void die();
@@ -20,5 +20,16 @@ public abstract class Agent{
 	public void setCell(Cell cell){
 		this.cell = cell;
 	}
+	
+	public void start(int turn){
+		if(this.turn == turn){
+			this.go();
+		}
+	}
+
+	public void end(){
+		this.turn++;
+	}
+
 
 }
