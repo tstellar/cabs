@@ -5,8 +5,6 @@ public abstract class Agent{
 	int turn = 0;
 	
 	public abstract void go(int turn);
-	public abstract void move(int x, int y);
-	public abstract void setCell(Cell cell);
 /*	public void look();
 	public void reproduce();
 	public void die();
@@ -15,4 +13,12 @@ public abstract class Agent{
 	public void send();
 	public void recv();
 */
+	public void move(int x, int y){
+		cell.move(this, x, y);
+	}
+	
+	public void setCell(Cell cell){
+		this.cell = cell;
+	}
+
 }

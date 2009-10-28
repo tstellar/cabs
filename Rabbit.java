@@ -10,12 +10,4 @@ public class Rabbit extends Agent{
 			this.turn++;
 		}
 	}
-
-	public void move(int x, int y){
-		cell.move(this, x, y);
-	}
-	
-	public void setCell(Cell cell){
-		this.cell = cell;
-	}
 }
