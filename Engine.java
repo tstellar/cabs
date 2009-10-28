@@ -47,7 +47,7 @@ public class Engine{
 
 	public void placeAgents(int agents){
 		for(int i=0; i< agents; i++){
-			cells[i][0].add(new Rabbit(cells[i][0]));
+			cells[i][0].add(new Rabbit());
 		}
 	}
 
