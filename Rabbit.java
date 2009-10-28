@@ -1,8 +1,6 @@
 
-public class Rabbit implements Agent{
+public class Rabbit extends Agent{
 
-	Cell cell;
-	int turn = 0;
 	public Rabbit(Cell cell){
 		this.cell = cell;
 	}

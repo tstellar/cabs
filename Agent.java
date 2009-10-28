@@ -1,9 +1,12 @@
 
-public interface Agent{
+public abstract class Agent{
 	
-	public void go(int turn);
-	public void move(int x, int y);
-	public void setCell(Cell cell);
+	Cell cell;
+	int turn = 0;
+	
+	public abstract void go(int turn);
+	public abstract void move(int x, int y);
+	public abstract void setCell(Cell cell);
 /*	public void look();
 	public void reproduce();
 	public void die();
