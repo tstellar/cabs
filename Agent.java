@@ -4,7 +4,7 @@ public abstract class Agent{
 	Cell cell;
 	int turn = 0;
 	
-	public abstract void go();
+	public abstract void go(); //abstract instead of interface so we can assume variables.
 /*	public void look();
 	public void reproduce();
 	public void die();
