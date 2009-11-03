@@ -25,6 +25,15 @@ public class Engine {
 		newCell.add(agent);
 		oldCell.remove(agent);
 	}
+	
+	private String getCellOwner(int x, int y){
+	}
+
+	private void discoverEngines(){
+	}
+
+	private Cell findCell(String ip, int x, int y){
+	}
 
 	private Cell findCell(int x, int y) {
 		if (y >= cells.length) {
