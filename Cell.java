@@ -3,10 +3,10 @@ import java.util.*;
 public class Cell{
 	int x;
 	int y;
-	Engine engine;
+	LocalEngine engine;
 	ArrayList<Agent> agents;
 
-	public Cell(int x, int y, Engine engine){
+	public Cell(int x, int y, LocalEngine engine){
 		this.x = x;
 		this.y = y;
 		agents = new ArrayList<Agent>();
