@@ -5,8 +5,18 @@ public class Engine{
 
 
 	Cell[][] cells;
+	int globalHeight;
+	int globalWidth;
+	int tlx;
+	int tly;
+	int height;
+	int width;
 
-	public Engine(int height, int width){
+	public Engine(int tlx, int tly, int height, int width, int globalHeight, int globalWidth){
+		this.tlx = tlx;
+		this.tly = tly;
+		this.globalHeight = globalHeight;
+		this.globalWidth = globalWidth;
 		cells = new Cell[height][width];
 		for(int i=0; i< cells.length; i++){
 			for(int j=0; j< cells[i].length; j++){
@@ -28,7 +38,7 @@ public class Engine{
 		newCell.add(agent);
 		oldCell.remove(agent);
 	}
-	
+/*	
 	private String getCellOwner(int x, int y){
 	}
 
@@ -37,19 +47,19 @@ public class Engine{
 
 	private Cell findCell(String ip, int x, int y){
 	}
-
+*/
 	private Cell findCell(int x, int y){
-		if(y >= cells.length){
-			y = y % cells.length;
+		if(y >= globalHeight){
+			y = y % globalHeight;
 		}
-		if(x >= cells[y].length){
-			x = x % cells.length;
+		if(x >= globalWidth){
+			x = x % globalWidth;
 		}
 		if(y < 0){
-			y = (y % cells.length) + cells.length;
+			y = (y % globalHeight) + globalHeight;
 		}
 		if(x < 0){
-			x = (x % cells.length) + cells[y].length;
+			x = (x % globalWidth) + globalWidth;
 		}
 		return cells[y][x];
 	}
@@ -76,7 +86,7 @@ public class Engine{
 	
 	public static void main(String[] args){
 		
-		Engine engine = new Engine(5, 5);
+		Engine engine = new Engine(0, 0, 5, 5, 5, 5);
 		engine.placeAgents(5);
 		engine.print();
 		for(int i=0; i< 8; i++){
