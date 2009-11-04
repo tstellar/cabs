@@ -35,16 +35,7 @@ public class LocalEngine extends Engine{
 		newCell.add(agent);
 		oldCell.remove(agent);
 	}
-/*	
-	private String getCellOwner(int x, int y){
-	}
-
-	private void discoverEngines(){
-	}
-
-	private Cell findCell(String ip, int x, int y){
-	}
-*/
+	
 	private Cell findRemoteCell(int x, int y){
 		for(int i=0; i< peerList.size(); i++){
 			if(peerList.get(i).hasCell(x, y)){
