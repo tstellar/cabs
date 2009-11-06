@@ -106,9 +106,17 @@ public class LocalEngine extends Engine{
 			OfferHelpResponse r = Protocol.offerHelpResp(in);
 			engine = new LocalEngine(r.tlx, r.tly, r.width, r.height,
 						r.globalWidth, r.globalHeight);
+			while(true){
+			//Wait for agents.
+			//Agent newAgent = Protocol.sendAgentReq(in);
+			//Put agent in the correct cell.
+			//engine.print();
+			break;
+			}
 		}
 		else{
-			engine = new LocalEngine(0, 0, 5, 5, 10, 10);
+			//TODO: Don't hard code everything.
+			engine = new LocalEngine(0, 0, 5, 5, globalWidth, globalHeight);
 			byte[] r = new byte[1];
 			ServerSocket serverSocket = new ServerSocket(port);
 			Socket clientSocket = serverSocket.accept();
@@ -116,14 +124,20 @@ public class LocalEngine extends Engine{
 			OutputStream out = clientSocket.getOutputStream();
 			in.read(r);
 			System.out.println(r[0]);
-			Protocol.offerHelpResp(out, 5, 0, 5, 5, 10, 10);
+			//TODO: Use a smart algorithm to figure out what
+			//coordinates to assign the other node.
+			Protocol.offerHelpResp(out, 5, 0, 5, 5, globalWidth, globalHeight);
+			//We probably need some kind of ACK here.
+			RemoteEngine remote = new RemoteEngine(clientSocket,
+					engine, 5, 0, 5, 5);
+			engine.peerList.add(remote);
 			engine.placeAgents(5);
-			engine.print();
-			for(int i=0; i< 8; i++){
-				engine.go(i);
-				engine.print();
-			}
 
+		}
+		engine.print();
+		for(int i=0; i< 8; i++){
+			engine.go(i);
+			engine.print();
 		}
 		}catch(Exception e){
 			e.printStackTrace();

@@ -7,7 +7,9 @@ public class RemoteEngine extends Engine{
 	Socket socket;
 	LocalEngine localEngine;
 
-	public RemoteEngine(Socket socket, LocalEngine localEngine){
+	public RemoteEngine(Socket socket, LocalEngine localEngine, int tlx,
+					int tly, int width, int height){
+		super(tlx,tly,width,height);
 		this.socket = socket;
 		this.localEngine = localEngine;
 	}

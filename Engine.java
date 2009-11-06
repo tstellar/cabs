@@ -10,7 +10,6 @@ public abstract class Engine{
 	
 	public abstract Cell findCell(int x, int y);
 
-	public Engine(){}
 	public Engine(int tlx, int tly, int width, int height){
 		this.tlx = tlx;
 		this.tly = tly;
