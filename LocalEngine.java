@@ -1,5 +1,8 @@
 import java.util.*;
-
+import java.io.*;
+import java.net.Socket;
+import java.net.ServerSocket;
+import java.net.InetAddress;
 
 public class LocalEngine extends Engine{
 
@@ -88,12 +91,42 @@ public class LocalEngine extends Engine{
 	
 	public static void main(String[] args){
 		
-		LocalEngine engine = new LocalEngine(0, 0, 5, 5, 5, 5);
-		engine.placeAgents(5);
-		engine.print();
-		for(int i=0; i< 8; i++){
-			engine.go(i);
+		int globalWidth = 10;
+		int globalHeight = 10;
+		int port = 1234;
+		LocalEngine engine = null;
+		try{
+		if(args.length == 1){
+			byte[] x = new byte[25];
+			InetAddress other = InetAddress.getByName(args[0]);
+			Socket socket = new Socket(other, port);
+			OutputStream out  = socket.getOutputStream();
+			InputStream in = socket.getInputStream();
+			Protocol.offerHelpReq(out);
+			OfferHelpResponse r = Protocol.offerHelpResp(in);
+			engine = new LocalEngine(r.tlx, r.tly, r.width, r.height,
+						r.globalWidth, r.globalHeight);
+		}
+		else{
+			engine = new LocalEngine(0, 0, 5, 5, 10, 10);
+			byte[] r = new byte[1];
+			ServerSocket serverSocket = new ServerSocket(port);
+			Socket clientSocket = serverSocket.accept();
+			InputStream in = clientSocket.getInputStream();
+			OutputStream out = clientSocket.getOutputStream();
+			in.read(r);
+			System.out.println(r[0]);
+			Protocol.offerHelpResp(out, 5, 0, 5, 5, 10, 10);
+			engine.placeAgents(5);
 			engine.print();
+			for(int i=0; i< 8; i++){
+				engine.go(i);
+				engine.print();
+			}
+
+		}
+		}catch(Exception e){
+			e.printStackTrace();
 		}
 	}
 }
