@@ -1,4 +1,3 @@
-
 public abstract class Engine {
 
 	int tlx;
@@ -7,6 +6,9 @@ public abstract class Engine {
 	int height;
 
 	public abstract Cell findCell(int x, int y);
+
+	public Engine() {
+	}
 
 	public Engine(int tlx, int tly, int width, int height) {
 		this.tlx = tlx;
