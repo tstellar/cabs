@@ -1,37 +1,15 @@
-import java.util.*;
+public abstract class Cell {
 
-public class Cell{
 	int x;
 	int y;
-	LocalEngine engine;
-	ArrayList<Agent> agents;
 
-	public Cell(int x, int y, LocalEngine engine){
+	public Cell(int x, int y) {
 		this.x = x;
 		this.y = y;
-		agents = new ArrayList<Agent>();
-		this.engine = engine;
 	}
 
+	abstract public void move(Agent agent, int x, int y);
 
-	public void go(int turn){
-		int totalAgents = agents.size();
-		for(int i=0; i< totalAgents; i++){
-			agents.get(i).start(turn);
-		}
-	}
-	
-	public void move(Agent agent, int x, int y){
-		engine.moveAgent(agent, this, x, y);
-	}
+	abstract public void add(Agent agent);
 
-	public void add(Agent agent){
-		agent.setCell(this);
-		agents.add(agent);
-	}
-
-	public void remove(Agent agent){
-		agents.remove(agent);
-		//Handle error.
-	}
 }
