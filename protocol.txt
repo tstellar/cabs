@@ -31,4 +31,6 @@ Value		(? bytes)
 sendAgent:
 +Request:
 requestType	(1 byte)
+X			(4 bytes)
+Y			(4 bytes)
 Agent(serialized) (? bytes)
