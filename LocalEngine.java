@@ -127,11 +127,12 @@ public class LocalEngine extends Engine {
 		int globalHeight = 10;
 		int port = 1234;
 		LocalEngine engine = null;
+		boolean isClient = false;
 		try {
 
 			// Client case
 			if (args.length == 1) {
-				byte[] x = new byte[25];
+				isClient = true;
 				InetAddress other = InetAddress.getByName(args[0]);
 				Socket socket = new Socket(other, port);
 				RemoteEngine server = new RemoteEngine(socket);
@@ -141,15 +142,6 @@ public class LocalEngine extends Engine {
 						r.globalHeight);
 				server.setEngine(engine);
 				engine.peerList.add(server);
-				for(int i = 0; i< 8; i++){
-					// Wait for agents.
-					engine.handleMessages();
-					System.out.println("Starting turn " + i);
-					engine.go(i);
-					engine.print();
-					// break;
-				}
-				System.exit(0);
 			}
 
 			// Server case
@@ -173,9 +165,14 @@ public class LocalEngine extends Engine {
 			}
 			engine.print();
 			for (int i = 0; i < 8; i++) {
-				Thread.sleep(1000);
-				for(int j=0;j<engine.peerList.size();j++){
-					Protocol.startTurn(engine.peerList.get(j).out, i);
+				if(isClient){
+					engine.handleMessages();
+				}
+				else{
+					Thread.sleep(1000);
+					for(int j=0;j<engine.peerList.size();j++){
+						Protocol.startTurn(engine.peerList.get(j).out, i);
+					}
 				}
 				System.out.println("Starting turn " + i);
 				engine.go(i);
