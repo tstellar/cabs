@@ -30,6 +30,7 @@ public class Protocol {
 
 	private static byte OFFERHELP = 0x1;
 	private static byte SENDAGENT = 0x2;
+	private static byte STARTTURN = 0x3;
 
 	public static void offerHelpReq(OutputStream out) {
 		try {
@@ -114,5 +115,30 @@ public class Protocol {
 		}
 
 		return result;
+	}
+
+	public static void startTurn(OutputStream out, int turn){
+		try{
+			ByteBuffer data = ByteBuffer.allocate(5);
+			data.put(STARTTURN);
+			data.putInt(turn);
+			out.write(data.array());
+
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+
+	public static int startTurn(InputStream in){
+		int turn = -1;
+		try{
+			//TODO: Check message type.
+			in.read();
+			DataInputStream data = new DataInputStream(in);
+			turn = data.readInt();
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return turn;
 	}
 }
