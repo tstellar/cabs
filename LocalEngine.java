@@ -110,6 +110,9 @@ public class LocalEngine extends Engine {
 						this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
 						System.err.println("Receieved agent: " + newAgent);
 						break;
+					case Protocol.STARTTURN:
+						int turn = Protocol.startTurn(in);
+						messageType = -1;	
 					}
 				}
 			}catch(Exception e){
@@ -132,8 +135,6 @@ public class LocalEngine extends Engine {
 				InetAddress other = InetAddress.getByName(args[0]);
 				Socket socket = new Socket(other, port);
 				RemoteEngine server = new RemoteEngine(socket);
-//				SocketChannel channel = SocketChannel.open(socket.getRemoteSocketAddress());
-//				channel.configureBlocking(false);
 				Protocol.offerHelpReq(server.out);
 				OfferHelpResponse r = Protocol.offerHelpResp(server.in);
 				engine = new LocalEngine(r.tlx, r.tly, r.width, r.height, r.globalWidth,
@@ -142,11 +143,13 @@ public class LocalEngine extends Engine {
 				engine.peerList.add(server);
 				for(int i = 0; i< 8; i++){
 					// Wait for agents.
-					engine.go(i);
 					engine.handleMessages();
+					System.out.println("Starting turn " + i);
+					engine.go(i);
 					engine.print();
 					// break;
 				}
+				System.exit(0);
 			}
 
 			// Server case
@@ -171,6 +174,10 @@ public class LocalEngine extends Engine {
 			engine.print();
 			for (int i = 0; i < 8; i++) {
 				Thread.sleep(1000);
+				for(int j=0;j<engine.peerList.size();j++){
+					Protocol.startTurn(engine.peerList.get(j).out, i);
+				}
+				System.out.println("Starting turn " + i);
 				engine.go(i);
 				engine.print();
 			}

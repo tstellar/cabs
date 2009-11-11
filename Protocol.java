@@ -30,10 +30,9 @@ public class Protocol {
 
 	private static byte OFFERHELP = 0x1;
 	public static final byte SENDAGENT = 0x2;
-	private static byte STARTTURN = 0x3;
+	public static final byte STARTTURN = 0x3;
 
 	public static void offerHelpReq(ObjectOutputStream out) {
-		System.out.println("Begin offer help");
 		try {
 			out.write(OFFERHELP);
 			out.flush();
@@ -89,6 +88,7 @@ public class Protocol {
 			oos.writeInt(x);
 			oos.writeInt(y);
 			oos.writeObject(agent);
+			oos.flush();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -115,25 +115,23 @@ public class Protocol {
 		return result;
 	}
 
-	public static void startTurn(OutputStream out, int turn){
+	public static void startTurn(ObjectOutputStream out, int turn){
 		try{
 			ByteBuffer data = ByteBuffer.allocate(5);
 			data.put(STARTTURN);
 			data.putInt(turn);
 			out.write(data.array());
-
+			out.flush();
 		} catch (Exception e){
 			e.printStackTrace();
 		}
 	}
 
-	public static int startTurn(InputStream in){
+	public static int startTurn(ObjectInputStream in){
 		int turn = -1;
 		try{
 			//TODO: Check message type.
-			in.read();
-			DataInputStream data = new DataInputStream(in);
-			turn = data.readInt();
+			turn = in.readInt();
 		}catch(Exception e){
 			e.printStackTrace();
 		}
