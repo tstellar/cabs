@@ -1,9 +1,12 @@
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.nio.channels.SocketChannel;
 
 public class LocalEngine extends Engine {
 
@@ -94,6 +97,27 @@ public class LocalEngine extends Engine {
 		}
 	}
 
+	private void handleMessages(){
+		for(int i=0; i< peerList.size(); i++){
+			int messageType = 0;
+			try{
+				ObjectInputStream in = (ObjectInputStream)peerList.get(i).in; 
+				while(messageType != -1){
+					messageType = in.read();
+					switch(messageType){
+					case Protocol.SENDAGENT:
+						ReceivedAgent newAgent = Protocol.sendAgent(in);
+						this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
+						System.err.println("Receieved agent: " + newAgent);
+						break;
+					}
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
+				
 	public static void main(String[] args) {
 
 		int globalWidth = 10;
@@ -107,19 +131,19 @@ public class LocalEngine extends Engine {
 				byte[] x = new byte[25];
 				InetAddress other = InetAddress.getByName(args[0]);
 				Socket socket = new Socket(other, port);
-				OutputStream out = socket.getOutputStream();
-				InputStream in = socket.getInputStream();
+//				SocketChannel channel = SocketChannel.open(socket.getRemoteSocketAddress());
+//				channel.configureBlocking(false);
+				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+				ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 				Protocol.offerHelpReq(out);
 				OfferHelpResponse r = Protocol.offerHelpResp(in);
 				engine = new LocalEngine(r.tlx, r.tly, r.width, r.height, r.globalWidth,
 						r.globalHeight);
-				while (true) {
-
+				engine.peerList.add(new RemoteEngine(socket, in, out, engine, 0,0,5,5));
+				for(int i = 0; i< 8; i++){
 					// Wait for agents.
-					ReceivedAgent newAgent = Protocol.sendAgent(in);
-					System.err.println("Receieved agent: " + newAgent);
-					engine.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
-					// Put agent in the correct cell.
+					engine.go(i);
+					engine.handleMessages();
 					engine.print();
 					// break;
 				}
@@ -132,21 +156,22 @@ public class LocalEngine extends Engine {
 				byte[] r = new byte[1];
 				ServerSocket serverSocket = new ServerSocket(port);
 				Socket clientSocket = serverSocket.accept();
-				InputStream in = clientSocket.getInputStream();
-				OutputStream out = clientSocket.getOutputStream();
+				ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+				ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
 				in.read(r);
 				System.out.println(r[0]);
 				// TODO: Use a smart algorithm to figure out what
 				// coordinates to assign the other node.
 				Protocol.offerHelpResp(out, 5, 0, 5, 5, globalWidth, globalHeight);
 				// We probably need some kind of ACK here.
-				RemoteEngine remote = new RemoteEngine(clientSocket, engine, 5, 0, 5, 5);
+				RemoteEngine remote = new RemoteEngine(clientSocket, in, out, engine, 5, 0, 5, 5);
 				engine.peerList.add(remote);
 				engine.placeAgents(5);
 
 			}
 			engine.print();
 			for (int i = 0; i < 8; i++) {
+				Thread.sleep(1000);
 				engine.go(i);
 				engine.print();
 			}
