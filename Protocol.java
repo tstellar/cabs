@@ -32,16 +32,18 @@ public class Protocol {
 	public static final byte SENDAGENT = 0x2;
 	private static byte STARTTURN = 0x3;
 
-	public static void offerHelpReq(OutputStream out) {
+	public static void offerHelpReq(ObjectOutputStream out) {
+		System.out.println("Begin offer help");
 		try {
 			out.write(OFFERHELP);
 			out.flush();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 	}
 
-	public static void offerHelpResp(OutputStream out, int tlx, int tly, int width, int height,
+	public static void offerHelpResp(ObjectOutputStream out, int tlx, int tly, int width, int height,
 			int globalWidth, int globalHeight) {
 		try {
 			ByteBuffer data = ByteBuffer.allocate(25);

@@ -131,15 +131,15 @@ public class LocalEngine extends Engine {
 				byte[] x = new byte[25];
 				InetAddress other = InetAddress.getByName(args[0]);
 				Socket socket = new Socket(other, port);
+				RemoteEngine server = new RemoteEngine(socket);
 //				SocketChannel channel = SocketChannel.open(socket.getRemoteSocketAddress());
 //				channel.configureBlocking(false);
-				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-				ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-				Protocol.offerHelpReq(out);
-				OfferHelpResponse r = Protocol.offerHelpResp(in);
+				Protocol.offerHelpReq(server.out);
+				OfferHelpResponse r = Protocol.offerHelpResp(server.in);
 				engine = new LocalEngine(r.tlx, r.tly, r.width, r.height, r.globalWidth,
 						r.globalHeight);
-				engine.peerList.add(new RemoteEngine(socket, in, out, engine, 0,0,5,5));
+				server.setEngine(engine);
+				engine.peerList.add(server);
 				for(int i = 0; i< 8; i++){
 					// Wait for agents.
 					engine.go(i);
@@ -153,19 +153,18 @@ public class LocalEngine extends Engine {
 			else {
 				// TODO: Don't hard code everything.
 				engine = new LocalEngine(0, 0, 5, 5, globalWidth, globalHeight);
-				byte[] r = new byte[1];
 				ServerSocket serverSocket = new ServerSocket(port);
 				Socket clientSocket = serverSocket.accept();
-				ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
-				ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-				in.read(r);
-				System.out.println(r[0]);
+				RemoteEngine client = new RemoteEngine(clientSocket, engine);
+				//This is to read the offerHelpReq message.  This
+				//should be in a method.
+				client.in.read();
 				// TODO: Use a smart algorithm to figure out what
 				// coordinates to assign the other node.
-				Protocol.offerHelpResp(out, 5, 0, 5, 5, globalWidth, globalHeight);
+				Protocol.offerHelpResp(client.out, 5, 0, 5, 5, globalWidth, globalHeight);
 				// We probably need some kind of ACK here.
-				RemoteEngine remote = new RemoteEngine(clientSocket, in, out, engine, 5, 0, 5, 5);
-				engine.peerList.add(remote);
+				client.setCoordinates(5,0,5,5);
+				engine.peerList.add(client);
 				engine.placeAgents(5);
 
 			}
