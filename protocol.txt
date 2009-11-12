@@ -1,0 +1,36 @@
+findCell:
++Request:
+RequestType	(1 byte)
+Turn		(4 bytes)
+X		(4 bytes)
+Y		(4 bytes)
+
++Response:
+ResponseType	(1 byte)
+Number		(4 bytes)
+ID0		(4 bytes)
+Type0		(4 bytes)
+ID1
+Type1
+...
+
+getAgentInfo:
++Request:
+RequestType	(1 byte)
+Turn		(4 bytes)
+X		(4 bytes)
+Y		(4 bytes)
+AgentID		(4 bytes)
+Field		(4 bytes)
+
++Response:
+ResponseType	(1 byte)
+Length		(4 bytes)
+Value		(? bytes)
+
+sendAgent:
++Request:
+requestType	(1 byte)
+X			(4 bytes)
+Y			(4 bytes)
+Agent(serialized) (? bytes)
