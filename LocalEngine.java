@@ -66,10 +66,8 @@ public class LocalEngine extends Engine {
 			x = (x % globalWidth) + globalWidth;
 		}
 		if (hasCell(x, y)) {
-			System.err.println("Has cell " + x + ", " + y);
 			return getCell(x ,y);
 		} else {
-			System.err.println("Checking remote for cell " + x + ", " + y);
 			return findRemoteCell(x, y);
 		}
 	}
@@ -112,11 +110,10 @@ public class LocalEngine extends Engine {
 					case Protocol.SENDAGENT:
 						ReceivedAgent newAgent = Protocol.sendAgent(in);
 						this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
-						System.err.println("Receieved agent: " + newAgent);
 						newAgent.agent.end();
 						break;
-					case Protocol.STARTTURN:
-						int turn = Protocol.startTurn(in);
+					case Protocol.ENDTURN:
+						int turn = Protocol.endTurn(in);
 						messageType = -1;	
 					}
 				}
@@ -170,17 +167,17 @@ public class LocalEngine extends Engine {
 			}
 			engine.print();
 			for (int i = 0; i < 8; i++) {
+				Thread.sleep(1000);
+				System.out.println("Starting turn " + i);
+				engine.go(i);
 				if(isClient){
 					engine.handleMessages();
 				}
 				else{
-					Thread.sleep(1000);
 					for(int j=0;j<engine.peerList.size();j++){
-						Protocol.startTurn(engine.peerList.get(j).out, i);
+						Protocol.endTurn(engine.peerList.get(j).out, i);
 					}
 				}
-				System.out.println("Starting turn " + i);
-				engine.go(i);
 				engine.print();
 			}
 		} catch (Exception e) {

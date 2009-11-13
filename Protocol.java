@@ -30,7 +30,7 @@ public class Protocol {
 
 	private static byte OFFERHELP = 0x1;
 	public static final byte SENDAGENT = 0x2;
-	public static final byte STARTTURN = 0x3;
+	public static final byte ENDTURN = 0x3;
 
 	public static void offerHelpReq(ObjectOutputStream out) {
 		try {
@@ -115,10 +115,10 @@ public class Protocol {
 		return result;
 	}
 
-	public static void startTurn(ObjectOutputStream out, int turn){
+	public static void endTurn(ObjectOutputStream out, int turn){
 		try{
 			ByteBuffer data = ByteBuffer.allocate(5);
-			data.put(STARTTURN);
+			data.put(ENDTURN);
 			data.putInt(turn);
 			out.write(data.array());
 			out.flush();
@@ -127,7 +127,7 @@ public class Protocol {
 		}
 	}
 
-	public static int startTurn(ObjectInputStream in){
+	public static int endTurn(ObjectInputStream in){
 		int turn = -1;
 		try{
 			//TODO: Check message type.
