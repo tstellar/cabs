@@ -23,7 +23,7 @@ public class LocalEngine extends Engine {
 		cells = new LocalCell[height][width];
 		for (int i = 0; i < cells.length; i++) {
 			for (int j = 0; j < cells[i].length; j++) {
-				cells[i][j] = new LocalCell(j, i, this);
+				cells[i][j] = new LocalCell(tlx + j, tly + i, this);
 			}
 		}
 	}
@@ -67,11 +67,15 @@ public class LocalEngine extends Engine {
 		}
 		if (hasCell(x, y)) {
 			System.err.println("Has cell " + x + ", " + y);
-			return cells[y][x];
+			return getCell(x ,y);
 		} else {
 			System.err.println("Checking remote for cell " + x + ", " + y);
 			return findRemoteCell(x, y);
 		}
+	}
+
+	public Cell getCell(int x, int y){
+		return cells[y - tly][x - tlx];
 	}
 
 	public void placeAgent(int x, int y, Agent agent) {
@@ -109,6 +113,7 @@ public class LocalEngine extends Engine {
 						ReceivedAgent newAgent = Protocol.sendAgent(in);
 						this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
 						System.err.println("Receieved agent: " + newAgent);
+						newAgent.agent.end();
 						break;
 					case Protocol.STARTTURN:
 						int turn = Protocol.startTurn(in);
