@@ -28,7 +28,7 @@ class ReceivedAgent {
 
 public class Protocol {
 
-	private static byte OFFERHELP = 0x1;
+	public static final byte OFFERHELP = 0x1;
 	public static final byte SENDAGENT = 0x2;
 	public static final byte ENDTURN = 0x3;
 
