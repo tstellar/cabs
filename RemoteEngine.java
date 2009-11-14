@@ -1,16 +1,34 @@
 import java.io.IOException;
 import java.net.Socket;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 
 public class RemoteEngine extends Engine {
 
 	Socket socket;
+	ObjectInputStream in;
+	ObjectOutputStream out;
 	LocalEngine localEngine;
 
-	public RemoteEngine(Socket socket, LocalEngine localEngine, int tlx, int tly, int width,
-			int height) {
-		super(tlx, tly, width, height);
+	public RemoteEngine(Socket socket){
 		this.socket = socket;
+		try{
+			this.out = new ObjectOutputStream(socket.getOutputStream());
+			this.in = new ObjectInputStream(socket.getInputStream());
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	public RemoteEngine(Socket socket, LocalEngine localEngine) {
+		this(socket);
 		this.localEngine = localEngine;
+	}
+
+	public void setEngine(LocalEngine engine){
+		this.localEngine = engine;
 	}
 
 	@Override
@@ -23,12 +41,6 @@ public class RemoteEngine extends Engine {
 	public void sendAgent(RemoteCell newCell, Agent agent) {
 		// TODO: Send a 'sendAgent' request to the remote machine using
 		// the message protocol.
-		try {
-			Protocol.sendAgent(socket.getOutputStream(), newCell.x, newCell.y, agent);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
+		Protocol.sendAgent(out, newCell.x, newCell.y, agent);
 	}
 }

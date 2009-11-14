@@ -28,18 +28,21 @@ class ReceivedAgent {
 
 public class Protocol {
 
-	private static byte OFFERHELP = 0x1;
-	private static byte SENDAGENT = 0x2;
+	public static final byte OFFERHELP = 0x1;
+	public static final byte SENDAGENT = 0x2;
+	public static final byte ENDTURN = 0x3;
 
-	public static void offerHelpReq(OutputStream out) {
+	public static void offerHelpReq(ObjectOutputStream out) {
 		try {
 			out.write(OFFERHELP);
+			out.flush();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 	}
 
-	public static void offerHelpResp(OutputStream out, int tlx, int tly, int width, int height,
+	public static void offerHelpResp(ObjectOutputStream out, int tlx, int tly, int width, int height,
 			int globalWidth, int globalHeight) {
 		try {
 			ByteBuffer data = ByteBuffer.allocate(25);
@@ -57,18 +60,17 @@ public class Protocol {
 		}
 	}
 
-	public static OfferHelpResponse offerHelpResp(InputStream in) {
+	public static OfferHelpResponse offerHelpResp(ObjectInputStream in) {
 		OfferHelpResponse r = new OfferHelpResponse();
 		try {
 			// TODO verify message type
 			in.read();
-			DataInputStream data = new DataInputStream(in);
-			r.tlx = data.readInt();
-			r.tly = data.readInt();
-			r.width = data.readInt();
-			r.height = data.readInt();
-			r.globalWidth = data.readInt();
-			r.globalHeight = data.readInt();
+			r.tlx = in.readInt();
+			r.tly = in.readInt();
+			r.width = in.readInt();
+			r.height = in.readInt();
+			r.globalWidth = in.readInt();
+			r.globalHeight = in.readInt();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -79,9 +81,9 @@ public class Protocol {
 	 * sendAgent: +Request: requestType (1 byte) X (4 bytes) Y (4 bytes)
 	 * Agent(serialized) (? bytes)
 	 */
-	public static void sendAgent(OutputStream out, int x, int y, Agent agent) {
+	public static void sendAgent(ObjectOutputStream out, int x, int y, Agent agent) {
 		try {
-			ObjectOutputStream oos = new ObjectOutputStream(out);
+			ObjectOutputStream oos = out;
 			oos.writeByte(SENDAGENT);
 			oos.writeInt(x);
 			oos.writeInt(y);
@@ -93,17 +95,14 @@ public class Protocol {
 		}
 	}
 
-	public static ReceivedAgent sendAgent(InputStream in) {
+	public static ReceivedAgent sendAgent(ObjectInputStream in) {
 		ReceivedAgent result = null;
 
 		try {
-			// in.read();
-			ObjectInputStream oin = new ObjectInputStream(in);
-			oin.readByte();
 			result = new ReceivedAgent();
-			result.x = oin.readInt();
-			result.y = oin.readInt();
-			result.agent = (Agent) oin.readObject();
+			result.x = in.readInt();
+			result.y = in.readInt();
+			result.agent = (Agent) in.readObject();
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -114,5 +113,28 @@ public class Protocol {
 		}
 
 		return result;
+	}
+
+	public static void endTurn(ObjectOutputStream out, int turn){
+		try{
+			ByteBuffer data = ByteBuffer.allocate(5);
+			data.put(ENDTURN);
+			data.putInt(turn);
+			out.write(data.array());
+			out.flush();
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+
+	public static int endTurn(ObjectInputStream in){
+		int turn = -1;
+		try{
+			//TODO: Check message type.
+			turn = in.readInt();
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return turn;
 	}
 }
