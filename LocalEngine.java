@@ -21,9 +21,9 @@ public class LocalEngine extends Engine {
 		this.globalHeight = globalHeight;
 		peerList = new ArrayList<RemoteEngine>();
 		cells = new LocalCell[height][width];
-		for (int i = 0; i < cells.length; i++) {
-			for (int j = 0; j < cells[i].length; j++) {
-				cells[i][j] = new LocalCell(j, i, this);
+		for (int i = 0; i < this.height; i++) {
+			for (int j = 0; j < this.width; j++) {
+				cells[i][j] = new LocalCell(tlx + j, tly + i, this);
 			}
 		}
 	}
@@ -66,28 +66,33 @@ public class LocalEngine extends Engine {
 			x = (x % globalWidth) + globalWidth;
 		}
 		if (hasCell(x, y)) {
-			System.err.println("Has cell " + x + ", " + y);
-			return cells[y][x];
+			return getCell(x ,y);
 		} else {
-			System.err.println("Checking remote for cell " + x + ", " + y);
 			return findRemoteCell(x, y);
 		}
 	}
 
+	public LocalCell getCell(int x, int y){
+		return cells[y - tly][x - tlx];
+	}
+
 	public void placeAgent(int x, int y, Agent agent) {
-		cells[y - tly][x - tlx].add(agent);
+		LocalCell cell = getCell(x, y);
+		cell.add(agent);
 	}
 
 	public void placeAgents(int agents) {
 		for (int i = 0; i < agents; i++) {
-			cells[i][0].add(new Rabbit());
+			LocalCell cell = getCell(0,i);
+			cell.add(new Rabbit());
 		}
 	}
 
 	public void print() {
-		for (LocalCell[] cell : cells) {
-			for (LocalCell element : cell) {
-				if (element.agents.size() > 0) {
+		for(int i=0; i < height; i++){
+			for(int j=0; j < width; j++){
+				LocalCell cell = cells[i][j];
+				if (cell.agents.size() > 0) {
 					System.out.print("* ");
 				} else {
 					System.out.print("- ");
@@ -108,10 +113,10 @@ public class LocalEngine extends Engine {
 					case Protocol.SENDAGENT:
 						ReceivedAgent newAgent = Protocol.sendAgent(in);
 						this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
-						System.err.println("Receieved agent: " + newAgent);
+						newAgent.agent.end();
 						break;
-					case Protocol.STARTTURN:
-						int turn = Protocol.startTurn(in);
+					case Protocol.ENDTURN:
+						int turn = Protocol.endTurn(in);
 						messageType = -1;	
 					}
 				}
@@ -119,6 +124,29 @@ public class LocalEngine extends Engine {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	private void sendCells(RemoteEngine remote){
+		//TODO:  Send agents along with cells.
+		int rWidth = this.width / 2;
+		int rHeight = this.height;
+		int rTlx = this.width - rWidth;
+		int rTly = 0;
+		Protocol.offerHelpResp(remote.out, rTlx, rTly, rWidth, rHeight, globalWidth, globalHeight);
+		for(int i= rTlx; i < rWidth; i++){
+			for(int j = rTly; j < rHeight; j++){
+				LocalCell cell = getCell(i, j);
+				for(Agent a : cell.agents){
+					Protocol.sendAgent(remote.out, cell.x, cell.y, a);
+				}
+			}
+		}
+		remote.setCoordinates(rTlx,rTly,rWidth,rHeight);
+		this.peerList.add(remote);
+		//TODO: Actually change the size of the data structure that
+		//holds the cells.
+		this.width = this.width - rWidth;
+		
 	}
 				
 	public static void main(String[] args) {
@@ -133,6 +161,7 @@ public class LocalEngine extends Engine {
 			// Client case
 			if (args.length == 1) {
 				isClient = true;
+				//Use multicast instead.
 				InetAddress other = InetAddress.getByName(args[0]);
 				Socket socket = new Socket(other, port);
 				RemoteEngine server = new RemoteEngine(socket);
@@ -142,40 +171,40 @@ public class LocalEngine extends Engine {
 						r.globalHeight);
 				server.setEngine(engine);
 				engine.peerList.add(server);
+				server.setCoordinates(0, 0, 5, 10);
+				//TODO: Get agents from server.
 			}
 
 			// Server case
 			else {
 				// TODO: Don't hard code everything.
-				engine = new LocalEngine(0, 0, 5, 5, globalWidth, globalHeight);
+				engine = new LocalEngine(0, 0, globalWidth, globalHeight, globalWidth, globalHeight);
 				ServerSocket serverSocket = new ServerSocket(port);
 				Socket clientSocket = serverSocket.accept();
 				RemoteEngine client = new RemoteEngine(clientSocket, engine);
 				//This is to read the offerHelpReq message.  This
 				//should be in a method.
-				client.in.read();
+				if(client.in.read() != Protocol.OFFERHELP){
+					throw new Exception("Expected offer help request.");
+				}
 				// TODO: Use a smart algorithm to figure out what
 				// coordinates to assign the other node.
-				Protocol.offerHelpResp(client.out, 5, 0, 5, 5, globalWidth, globalHeight);
+				engine.sendCells(client);
+	
 				// We probably need some kind of ACK here.
-				client.setCoordinates(5,0,5,5);
-				engine.peerList.add(client);
+
 				engine.placeAgents(5);
 
 			}
 			engine.print();
-			for (int i = 0; i < 8; i++) {
-				if(isClient){
-					engine.handleMessages();
-				}
-				else{
-					Thread.sleep(1000);
-					for(int j=0;j<engine.peerList.size();j++){
-						Protocol.startTurn(engine.peerList.get(j).out, i);
-					}
-				}
+			for (int i = 0; i < 20; i++) {
+				Thread.sleep(1000);
 				System.out.println("Starting turn " + i);
 				engine.go(i);
+				for(int j=0;j<engine.peerList.size();j++){
+					Protocol.endTurn(engine.peerList.get(j).out, i);
+				}
+				engine.handleMessages();
 				engine.print();
 			}
 		} catch (Exception e) {

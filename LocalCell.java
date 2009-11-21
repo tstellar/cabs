@@ -14,6 +14,13 @@ public class LocalCell extends Cell {
 		int totalAgents = agents.size();
 		for (int i = 0; i < totalAgents; i++) {
 			agents.get(i).start(turn);
+			if(agents.isEmpty()){
+				break;
+			}
+			if(agents.size() < totalAgents){
+				totalAgents = agents.size();
+				i-= (totalAgents - agents.size());
+			}
 		}
 	}
 

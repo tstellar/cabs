@@ -1,8 +1,11 @@
+import java.util.Random;
+
 
 public class Rabbit extends Agent{
-
+	Random r = new Random();
 	public void go(){
-		move(1,0);
+		
+		move(r.nextInt(5),r.nextInt(5));
 		end();
 	}
 }
