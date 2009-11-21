@@ -6,22 +6,10 @@ public abstract class Agent implements Serializable {
 	int turn = 0;
 	
 	public abstract void go(); //abstract instead of interface so we can assume variables.
-/*	public void look();
-	public void reproduce();
-	public void die();
-	public void set();
-	public void read();
-	public void send();
-	public void recv();
-*/
-	public void move(int x, int y){
-
-	public abstract void go();
-
-	/*
-	 * public void look(); public void reproduce(); public void die(); public
-	 * void set(); public void read(); public void send(); public void recv();
-	 */
+ 	/*
+	* public void look(); public void reproduce(); public void die(); public
+	* void set(); public void read(); public void send(); public void recv();
+	*/
 	public void move(int x, int y) {
 		cell.move(this, x, y);
 	}
