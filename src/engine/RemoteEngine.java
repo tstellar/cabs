@@ -1,9 +1,15 @@
+package engine;
+
 import java.io.IOException;
 import java.net.Socket;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
+
+import world.Agent;
+import world.Cell;
+import world.RemoteCell;
 
 public class RemoteEngine extends Engine {
 
@@ -41,6 +47,6 @@ public class RemoteEngine extends Engine {
 	public void sendAgent(RemoteCell newCell, Agent agent) {
 		// TODO: Send a 'sendAgent' request to the remote machine using
 		// the message protocol.
-		Protocol.sendAgent(out, newCell.x, newCell.y, agent);
+		Protocol.sendAgent(out, newCell.getX(), newCell.getY(), agent);
 	}
 }

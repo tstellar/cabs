@@ -1,3 +1,4 @@
+package world;
 import java.io.Serializable;
 
 public abstract class Agent implements Serializable {

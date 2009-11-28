@@ -1,3 +1,5 @@
+package engine;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.ObjectInputStream;
@@ -7,6 +9,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.nio.channels.SocketChannel;
+
+import world.Agent;
+import world.Cell;
+import world.LocalCell;
+import world.impl.Rabbit;
 
 public class LocalEngine extends Engine {
 
@@ -37,7 +44,7 @@ public class LocalEngine extends Engine {
 	}
 
 	public void moveAgent(Agent agent, LocalCell oldCell, int x, int y) {
-		Cell newCell = findCell(oldCell.x + x, oldCell.y + y);
+		Cell newCell = findCell(oldCell.getX() + x, oldCell.getY() + y);
 		newCell.add(agent);
 		oldCell.remove(agent);
 	}
@@ -92,7 +99,7 @@ public class LocalEngine extends Engine {
 		for(int i=0; i < height; i++){
 			for(int j=0; j < width; j++){
 				LocalCell cell = cells[i][j];
-				if (cell.agents.size() > 0) {
+				if (cell.getAgents().size() > 0) {
 					System.out.print("* ");
 				} else {
 					System.out.print("- ");
@@ -136,8 +143,8 @@ public class LocalEngine extends Engine {
 		for(int i= rTlx; i < rWidth; i++){
 			for(int j = rTly; j < rHeight; j++){
 				LocalCell cell = getCell(i, j);
-				for(Agent a : cell.agents){
-					Protocol.sendAgent(remote.out, cell.x, cell.y, a);
+				for(Agent a : cell.getAgents()){
+					Protocol.sendAgent(remote.out, cell.getX(), cell.getY(), a);
 				}
 			}
 		}

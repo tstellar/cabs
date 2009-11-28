@@ -1,3 +1,4 @@
+package ui;
 //package cellgrid;
 
 import java.awt.*;

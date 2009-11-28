@@ -1,3 +1,6 @@
+package engine;
+import world.Cell;
+
 public abstract class Engine {
 
 	int tlx;

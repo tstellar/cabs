@@ -1,4 +1,7 @@
+package world.impl;
 import java.util.Random;
+
+import world.Agent;
 
 
 public class Rabbit extends Agent{
