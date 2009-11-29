@@ -1,4 +1,4 @@
-package engine;
+package net;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -10,27 +10,88 @@ import java.nio.ByteBuffer;
 
 import world.Agent;
 
-class OfferHelpResponse {
-	int tlx;
-	int tly;
-	int width;
-	int height;
-	int globalWidth;
-	int globalHeight;
-}
-
-class ReceivedAgent {
-	int x;
-	int y;
-	Agent agent;
-
-	@Override
-	public String toString() {
-		return x + ", " + y + agent.toString();
-	}
-}
 
 public class Protocol {
+	
+	public static class OfferHelpResponse {
+		private int tlx;
+		private int tly;
+		private int width;
+		private int height;
+		private int globalWidth;
+		private int globalHeight;
+		public void setTly(int tly) {
+			this.tly = tly;
+		}
+		public int getTly() {
+			return tly;
+		}
+		public void setTlx(int tlx) {
+			this.tlx = tlx;
+		}
+		public int getTlx() {
+			return tlx;
+		}
+		public void setGlobalHeight(int globalHeight) {
+			this.globalHeight = globalHeight;
+		}
+		public int getGlobalHeight() {
+			return globalHeight;
+		}
+		public void setGlobalWidth(int globalWidth) {
+			this.globalWidth = globalWidth;
+		}
+		public int getGlobalWidth() {
+			return globalWidth;
+		}
+		public void setWidth(int width) {
+			this.width = width;
+		}
+		public int getWidth() {
+			return width;
+		}
+		public void setHeight(int height) {
+			this.height = height;
+		}
+		public int getHeight() {
+			return height;
+		}
+	}
+
+	public static class ReceivedAgent {
+		private int x;
+		private int y;
+		private Agent agent;
+
+		@Override
+		public String toString() {
+			return getX() + ", " + getY() + getAgent().toString();
+		}
+
+		public void setX(int x) {
+			this.x = x;
+		}
+
+		public int getX() {
+			return x;
+		}
+
+		public void setY(int y) {
+			this.y = y;
+		}
+
+		public int getY() {
+			return y;
+		}
+
+		public void setAgent(Agent agent) {
+			this.agent = agent;
+		}
+
+		public Agent getAgent() {
+			return agent;
+		}
+	}
 
 	public static final byte OFFERHELP = 0x1;
 	public static final byte SENDAGENT = 0x2;
@@ -69,12 +130,12 @@ public class Protocol {
 		try {
 			// TODO verify message type
 			in.read();
-			r.tlx = in.readInt();
-			r.tly = in.readInt();
-			r.width = in.readInt();
-			r.height = in.readInt();
-			r.globalWidth = in.readInt();
-			r.globalHeight = in.readInt();
+			r.setTlx(in.readInt());
+			r.setTly(in.readInt());
+			r.setWidth(in.readInt());
+			r.setHeight(in.readInt());
+			r.setGlobalWidth(in.readInt());
+			r.setGlobalHeight(in.readInt());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -104,9 +165,9 @@ public class Protocol {
 
 		try {
 			result = new ReceivedAgent();
-			result.x = in.readInt();
-			result.y = in.readInt();
-			result.agent = (Agent) in.readObject();
+			result.setX(in.readInt());
+			result.setY(in.readInt());
+			result.setAgent((Agent) in.readObject());
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

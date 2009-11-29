@@ -7,6 +7,8 @@ import java.io.OutputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 
+import net.Protocol;
+
 import world.Agent;
 import world.Cell;
 import world.RemoteCell;

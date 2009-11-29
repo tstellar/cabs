@@ -1,15 +1,14 @@
 package engine;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.nio.channels.SocketChannel;
 
+import net.Protocol;
+import net.Protocol.OfferHelpResponse;
+import net.Protocol.ReceivedAgent;
 import world.Agent;
 import world.Cell;
 import world.LocalCell;
@@ -119,8 +118,8 @@ public class LocalEngine extends Engine {
 					switch(messageType){
 					case Protocol.SENDAGENT:
 						ReceivedAgent newAgent = Protocol.sendAgent(in);
-						this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
-						newAgent.agent.end();
+						this.placeAgent(newAgent.getX(), newAgent.getY(), newAgent.getAgent());
+						newAgent.getAgent().end();
 						break;
 					case Protocol.ENDTURN:
 						int turn = Protocol.endTurn(in);
@@ -174,8 +173,8 @@ public class LocalEngine extends Engine {
 				RemoteEngine server = new RemoteEngine(socket);
 				Protocol.offerHelpReq(server.out);
 				OfferHelpResponse r = Protocol.offerHelpResp(server.in);
-				engine = new LocalEngine(r.tlx, r.tly, r.width, r.height, r.globalWidth,
-						r.globalHeight);
+				engine = new LocalEngine(r.getTlx(), r.getTly(), r.getWidth(), r.getHeight(), r.getGlobalWidth(),
+						r.getGlobalHeight());
 				server.setEngine(engine);
 				engine.peerList.add(server);
 				server.setCoordinates(0, 0, 5, 10);
