@@ -1,3 +1,5 @@
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.ObjectInputStream;
@@ -5,7 +7,9 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.nio.channels.SocketChannel;
 
 public class LocalEngine extends Engine {
@@ -14,9 +18,13 @@ public class LocalEngine extends Engine {
 	ArrayList<RemoteEngine> peerList;
 	int globalWidth;
 	int globalHeight;
+	int turn = 0;
+	boolean rollback = false;
+	HashMap<Integer, ArrayList<byte[]>> states;
 
 	public LocalEngine(int tlx, int tly, int width, int height, int globalWidth, int globalHeight) {
 		super(tlx, tly, width, height);
+		this.states = new HashMap<Integer, ArrayList<byte[]>>();
 		this.globalWidth = globalWidth;
 		this.globalHeight = globalHeight;
 		peerList = new ArrayList<RemoteEngine>();
@@ -27,12 +35,82 @@ public class LocalEngine extends Engine {
 			}
 		}
 	}
-
-	public void go(int turn) {
-		for (LocalCell[] cell : cells) {
-			for (LocalCell element : cell) {
-				element.go(turn);
+	
+	private void saveState(){
+		
+		ArrayList<byte[]> newState = new ArrayList<byte[]>();
+		for(int i=0; i< height; i++){
+			for(int j=0; j< width; j++){
+				LocalCell cell = cells[i][j];
+				newState.add(cell.serialize());
 			}
+		}
+		states.put(turn, newState);
+	}
+	
+	private void rollback(int turn){
+		//TODO: Send off anti-message queue.
+		rollback = true;
+		ArrayList<byte[]> state = states.get(turn);
+		for( byte[] b : state){
+			System.err.println("The byte array is of length " + b.length);
+			ByteArrayInputStream s = new ByteArrayInputStream(b);
+			try {
+				ObjectInputStream ois = new ObjectInputStream(s);
+				int x = ois.readInt();
+				int y = ois.readInt();
+				int count = ois.readInt();
+				System.err.println(MessageFormat.format(
+						"Rolling back cell ({0}, {1}); {2} agents.", x,
+						y, count));
+				LocalCell cell = getCell(x,y);
+				cell.agents.clear();
+				while(count-- != 0){
+					cell.add((Agent)ois.readObject());
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		this.turn = turn;
+	}
+
+	public void go() {
+		
+		while(turn < 20){
+			//TODO: Remove this only for testing
+			if(turn == 10){
+				rollback(3);
+			}
+			
+			if(!rollback){
+				turn++;
+				saveState();
+			}
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			System.out.println("Starting turn " + turn);
+			for(LocalCell[] cell : cells) {
+				for(LocalCell element: cell){
+					element.resetAgents();
+				}
+			}
+			
+			for (LocalCell[] cell : cells) {
+				for (LocalCell element : cell) {
+					element.go(turn);
+				}
+			}
+			rollback = false;
+			for(int j=0;j<peerList.size();j++){
+				Protocol.endTurn(peerList.get(j).out, turn);
+			}
+			handleMessages();
+			print();
+			//TODO: Display to GUI.
 		}
 	}
 
@@ -113,7 +191,6 @@ public class LocalEngine extends Engine {
 					case Protocol.SENDAGENT:
 						ReceivedAgent newAgent = Protocol.sendAgent(in);
 						this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
-						newAgent.agent.end();
 						break;
 					case Protocol.ENDTURN:
 						int turn = Protocol.endTurn(in);
@@ -197,16 +274,7 @@ public class LocalEngine extends Engine {
 
 			}
 			engine.print();
-			for (int i = 0; i < 20; i++) {
-				Thread.sleep(1000);
-				System.out.println("Starting turn " + i);
-				engine.go(i);
-				for(int j=0;j<engine.peerList.size();j++){
-					Protocol.endTurn(engine.peerList.get(j).out, i);
-				}
-				engine.handleMessages();
-				engine.print();
-			}
+			engine.go();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
