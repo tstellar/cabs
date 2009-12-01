@@ -7,6 +7,7 @@ public abstract class Agent implements Serializable {
 	private static final long serialVersionUID = 1L;
 	transient LocalCell cell;
 	int turn = 0;
+	public boolean hasMoved = false;
 	
 	public abstract void go();
 	
@@ -23,13 +24,10 @@ public abstract class Agent implements Serializable {
 	}
 	
 	public void start(int turn) {
-		if (this.turn == turn) {
+		if (!hasMoved) {
+			hasMoved = true;
 			this.go();
 		}
-	}
-	
-	public void end() {
-		this.turn++;
 	}
 	
 }
