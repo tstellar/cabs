@@ -21,6 +21,7 @@ public class LocalEngine extends Engine {
 	int turn = 0;
 	boolean rollback = false;
 	HashMap<Integer, ArrayList<byte[]>> states;
+	CellGrid gui;
 
 	public LocalEngine(int tlx, int tly, int width, int height, int globalWidth, int globalHeight) {
 		super(tlx, tly, width, height);
@@ -29,6 +30,7 @@ public class LocalEngine extends Engine {
 		this.globalHeight = globalHeight;
 		peerList = new ArrayList<RemoteEngine>();
 		cells = new LocalCell[height][width];
+		gui = new CellGrid(this.height, this.width, tlx, tly);
 		for (int i = 0; i < this.height; i++) {
 			for (int j = 0; j < this.width; j++) {
 				cells[i][j] = new LocalCell(tlx + j, tly + i, this);
@@ -53,16 +55,16 @@ public class LocalEngine extends Engine {
 		rollback = true;
 		ArrayList<byte[]> state = states.get(turn);
 		for( byte[] b : state){
-			System.err.println("The byte array is of length " + b.length);
+			//System.err.println("The byte array is of length " + b.length);
 			ByteArrayInputStream s = new ByteArrayInputStream(b);
 			try {
 				ObjectInputStream ois = new ObjectInputStream(s);
 				int x = ois.readInt();
 				int y = ois.readInt();
 				int count = ois.readInt();
-				System.err.println(MessageFormat.format(
+				/*System.err.println(MessageFormat.format(
 						"Rolling back cell ({0}, {1}); {2} agents.", x,
-						y, count));
+						y, count));*/
 				LocalCell cell = getCell(x,y);
 				cell.agents.clear();
 				while(count-- != 0){
@@ -110,7 +112,6 @@ public class LocalEngine extends Engine {
 			}
 			handleMessages();
 			print();
-			//TODO: Display to GUI.
 		}
 	}
 
@@ -172,8 +173,10 @@ public class LocalEngine extends Engine {
 				LocalCell cell = cells[i][j];
 				if (cell.agents.size() > 0) {
 					System.out.print("* ");
+					gui.setColor(j, i, CellGrid.agent1);
 				} else {
 					System.out.print("- ");
+					gui.setColor(j, i, CellGrid.empty);
 				}
 			}
 			System.out.println();
@@ -216,13 +219,15 @@ public class LocalEngine extends Engine {
 				for(Agent a : cell.agents){
 					Protocol.sendAgent(remote.out, cell.x, cell.y, a);
 				}
-			}
+			}		
 		}
 		remote.setCoordinates(rTlx,rTly,rWidth,rHeight);
 		this.peerList.add(remote);
 		//TODO: Actually change the size of the data structure that
 		//holds the cells.
 		this.width = this.width - rWidth;
+		gui.dispose();
+		gui = new CellGrid(height, width, tlx, tly);
 		
 	}
 				

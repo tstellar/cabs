@@ -52,10 +52,10 @@ public class LocalCell extends Cell {
 			oos.writeInt(x);
 			oos.writeInt(y);
 			oos.writeInt(agents.size());
-			if(agents.size() != 0) {
+			/*if(agents.size() != 0) {
 			System.err.println(MessageFormat.format("Serializing cell ({0}, {1}); {2} agents.",
 					x, y, agents.size()));
-			}
+			}*/
 			for( Agent a : agents){
 				oos.writeObject(a);
 			}
