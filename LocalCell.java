@@ -1,3 +1,7 @@
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 
 public class LocalCell extends Cell {
@@ -39,4 +43,33 @@ public class LocalCell extends Cell {
 		agents.remove(agent);
 		// Handle error.
 	}
+
+	public byte[] serialize() {
+		ByteArrayOutputStream s = new ByteArrayOutputStream();
+		ObjectOutputStream oos;
+		try {
+			oos = new ObjectOutputStream(s);
+			oos.writeInt(x);
+			oos.writeInt(y);
+			oos.writeInt(agents.size());
+			if(agents.size() != 0) {
+			System.err.println(MessageFormat.format("Serializing cell ({0}, {1}); {2} agents.",
+					x, y, agents.size()));
+			}
+			for( Agent a : agents){
+				oos.writeObject(a);
+			}
+			oos.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return s.toByteArray();
+	}
+	
+	public void resetAgents(){
+		for(Agent a : agents){
+			a.hasMoved = false;
+		}
+	}
 }
+

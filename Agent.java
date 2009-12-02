@@ -4,12 +4,14 @@ public abstract class Agent implements Serializable {
 
 	transient LocalCell cell;
 	int turn = 0;
-	
-	public abstract void go(); //abstract instead of interface so we can assume variables.
- 	/*
-	* public void look(); public void reproduce(); public void die(); public
-	* void set(); public void read(); public void send(); public void recv();
-	*/
+	public boolean hasMoved = false;
+
+	public abstract void go();
+
+	/*
+	 * public void look(); public void reproduce(); public void die(); public
+	 * void set(); public void read(); public void send(); public void recv();
+	 */
 	public void move(int x, int y) {
 		cell.move(this, x, y);
 	}
@@ -19,13 +21,9 @@ public abstract class Agent implements Serializable {
 	}
 
 	public void start(int turn) {
-		if (this.turn == turn) {
+		if (!hasMoved ) {
+			hasMoved = true;
 			this.go();
 		}
 	}
-
-	public void end() {
-		this.turn++;
-	}
-
 }
