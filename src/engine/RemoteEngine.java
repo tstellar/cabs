@@ -4,7 +4,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-import net.Protocol;
+import net.Message;
 import world.Agent;
 import world.Cell;
 import world.RemoteCell;
@@ -45,6 +45,7 @@ public class RemoteEngine extends Engine {
 	public void sendAgent(RemoteCell newCell, Agent agent) {
 		// TODO: Send a 'sendAgent' request to the remote machine using
 		// the message protocol.
-		Protocol.sendAgent(out, newCell.getX(), newCell.getY(), agent);
+		Message message = new Message(localEngine.turn, true);
+		message.sendAgent(out, newCell.getX(), newCell.getY(), agent);
 	}
 }

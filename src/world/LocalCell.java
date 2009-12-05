@@ -3,7 +3,6 @@ package world;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 
 import engine.LocalEngine;
@@ -53,15 +52,15 @@ public class LocalCell extends Cell {
 		ObjectOutputStream oos;
 		try {
 			oos = new ObjectOutputStream(s);
-			oos.writeInt(getX());
-			oos.writeInt(getY());
-			oos.writeInt(getAgents().size());
-			if (getAgents().size() != 0) {
-				System.err.println(MessageFormat.format(
-						"Serializing cell ({0}, {1}); {2} agents.", getX(),
-						getY(), getAgents().size()));
-			}
-			for (Agent a : getAgents()) {
+			oos.writeInt(x);
+			oos.writeInt(y);
+			oos.writeInt(agents.size());
+			/*
+			 * if(agents.size() != 0) {System.err.println(MessageFormat.format(
+			 * "Serializing cell ({0}, {1}); {2} agents.", x, y,
+			 * agents.size())); }
+			 */
+			for (Agent a : agents) {
 				oos.writeObject(a);
 			}
 			oos.flush();
@@ -76,11 +75,11 @@ public class LocalCell extends Cell {
 			a.hasMoved = false;
 		}
 	}
-
+	
 	public void setAgents(ArrayList<Agent> agents) {
 		this.agents = agents;
 	}
-
+	
 	public ArrayList<Agent> getAgents() {
 		return agents;
 	}

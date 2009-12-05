@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 
 import world.Agent;
 
-public class Protocol {
+public class Message {
 	
 	public static class OfferHelpResponse {
 		private int tlx;
@@ -16,53 +16,41 @@ public class Protocol {
 		private int height;
 		private int globalWidth;
 		private int globalHeight;
-		
-		public void setTly(int tly) {
-			this.tly = tly;
-		}
-		
-		public int getTly() {
-			return tly;
-		}
-		
 		public void setTlx(int tlx) {
 			this.tlx = tlx;
 		}
-		
 		public int getTlx() {
 			return tlx;
 		}
-		
-		public void setGlobalHeight(int globalHeight) {
-			this.globalHeight = globalHeight;
+		public void setTly(int tly) {
+			this.tly = tly;
 		}
-		
-		public int getGlobalHeight() {
-			return globalHeight;
+		public int getTly() {
+			return tly;
 		}
-		
-		public void setGlobalWidth(int globalWidth) {
-			this.globalWidth = globalWidth;
-		}
-		
-		public int getGlobalWidth() {
-			return globalWidth;
-		}
-		
 		public void setWidth(int width) {
 			this.width = width;
 		}
-		
 		public int getWidth() {
 			return width;
 		}
-		
 		public void setHeight(int height) {
 			this.height = height;
 		}
-		
 		public int getHeight() {
 			return height;
+		}
+		public void setGlobalWidth(int globalWidth) {
+			this.globalWidth = globalWidth;
+		}
+		public int getGlobalWidth() {
+			return globalWidth;
+		}
+		public void setGlobalHeight(int globalHeight) {
+			this.globalHeight = globalHeight;
+		}
+		public int getGlobalHeight() {
+			return globalHeight;
 		}
 	}
 	
@@ -75,27 +63,27 @@ public class Protocol {
 		public String toString() {
 			return getX() + ", " + getY() + getAgent().toString();
 		}
-		
+
 		public void setX(int x) {
 			this.x = x;
 		}
-		
+
 		public int getX() {
 			return x;
 		}
-		
+
 		public void setY(int y) {
 			this.y = y;
 		}
-		
+
 		public int getY() {
 			return y;
 		}
-		
+
 		public void setAgent(Agent agent) {
 			this.agent = agent;
 		}
-		
+
 		public Agent getAgent() {
 			return agent;
 		}
@@ -105,7 +93,39 @@ public class Protocol {
 	public static final byte SENDAGENT = 0x2;
 	public static final byte ENDTURN = 0x3;
 	
-	public static void offerHelpReq(ObjectOutputStream out) {
+	private int sendTurn;
+	boolean sign;
+	private int recvTurn;
+	
+	public Message(int sendTurn, boolean sign) {
+		this.sendTurn = sendTurn;
+		this.sign = sign;
+	}
+	
+	public Message(int recvTurn) {
+		this.recvTurn = recvTurn;
+	}
+	
+	private void writeMessage(ObjectOutputStream oos, byte messageType) {
+		try {
+			oos.writeByte(messageType);
+			oos.writeInt(sendTurn);
+			oos.writeBoolean(sign);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void readMessage(ObjectInputStream ois) {
+		try {
+			sendTurn = ois.readInt();
+			sign = ois.readBoolean();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void sendOfferHelpReq(ObjectOutputStream out) {
 		try {
 			out.write(OFFERHELP);
 			out.flush();
@@ -115,8 +135,8 @@ public class Protocol {
 		
 	}
 	
-	public static void offerHelpResp(ObjectOutputStream out, int tlx, int tly,
-			int width, int height, int globalWidth, int globalHeight) {
+	public static void sendOfferHelpResp(ObjectOutputStream out, int tlx,
+			int tly, int width, int height, int globalWidth, int globalHeight) {
 		try {
 			ByteBuffer data = ByteBuffer.allocate(25);
 			data.put(OFFERHELP);
@@ -133,7 +153,7 @@ public class Protocol {
 		}
 	}
 	
-	public static OfferHelpResponse offerHelpResp(ObjectInputStream in) {
+	public static OfferHelpResponse recvOfferHelpResp(ObjectInputStream in) {
 		OfferHelpResponse r = new OfferHelpResponse();
 		try {
 			// TODO verify message type
@@ -154,25 +174,24 @@ public class Protocol {
 	 * sendAgent: +Request: requestType (1 byte) X (4 bytes) Y (4 bytes)
 	 * Agent(serialized) (? bytes)
 	 */
-	public static void sendAgent(ObjectOutputStream out, int x, int y,
-			Agent agent) {
+	public void sendAgent(ObjectOutputStream out, int x, int y, Agent agent) {
 		try {
-			ObjectOutputStream oos = out;
-			oos.writeByte(SENDAGENT);
-			oos.writeInt(x);
-			oos.writeInt(y);
-			oos.writeObject(agent);
-			oos.flush();
+			writeMessage(out, SENDAGENT);
+			out.writeInt(x);
+			out.writeInt(y);
+			out.writeObject(agent);
+			out.flush();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
-	public static ReceivedAgent sendAgent(ObjectInputStream in) {
+	public ReceivedAgent recvAgent(ObjectInputStream in) {
 		ReceivedAgent result = null;
 		
 		try {
+			readMessage(in);
 			result = new ReceivedAgent();
 			result.setX(in.readInt());
 			result.setY(in.readInt());

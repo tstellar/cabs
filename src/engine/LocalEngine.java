@@ -5,13 +5,13 @@ import java.io.ObjectInputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import net.Protocol;
-import net.Protocol.OfferHelpResponse;
-import net.Protocol.ReceivedAgent;
+import net.Message;
+import net.Message.OfferHelpResponse;
+import net.Message.ReceivedAgent;
+import ui.CellGrid;
 import world.Agent;
 import world.Cell;
 import world.LocalCell;
@@ -27,6 +27,8 @@ public class LocalEngine extends Engine {
 	boolean rollback = false;
 	HashMap<Integer, ArrayList<byte[]>> states;
 	
+	CellGrid gui;
+	
 	public LocalEngine(int tlx, int tly, int width, int height,
 			int globalWidth, int globalHeight) {
 		super(tlx, tly, width, height);
@@ -35,6 +37,7 @@ public class LocalEngine extends Engine {
 		this.globalHeight = globalHeight;
 		peerList = new ArrayList<RemoteEngine>();
 		cells = new LocalCell[height][width];
+		gui = new CellGrid(this.height, this.width, tlx, tly);
 		for (int i = 0; i < this.height; i++) {
 			for (int j = 0; j < this.width; j++) {
 				cells[i][j] = new LocalCell(tlx + j, tly + i, this);
@@ -59,16 +62,18 @@ public class LocalEngine extends Engine {
 		rollback = true;
 		ArrayList<byte[]> state = states.get(turn);
 		for (byte[] b : state) {
-			System.err.println("The byte array is of length " + b.length);
+			// System.err.println("The byte array is of length " + b.length);
 			ByteArrayInputStream s = new ByteArrayInputStream(b);
 			try {
 				ObjectInputStream ois = new ObjectInputStream(s);
 				int x = ois.readInt();
 				int y = ois.readInt();
 				int count = ois.readInt();
-				System.err.println(MessageFormat.format(
-						"Rolling back cell ({0}, {1}); {2} agents.", x, y,
-						count));
+				
+				/*
+				 * System.err.println(MessageFormat.format(
+				 * "Rolling back cell ({0}, {1}); {2} agents.", x, y, count));
+				 */
 				LocalCell cell = getCell(x, y);
 				cell.getAgents().clear();
 				while (count-- != 0) {
@@ -112,11 +117,10 @@ public class LocalEngine extends Engine {
 			}
 			rollback = false;
 			for (int j = 0; j < peerList.size(); j++) {
-				Protocol.endTurn(peerList.get(j).out, turn);
+				Message.endTurn(peerList.get(j).out, turn);
 			}
 			handleMessages();
 			print();
-			// TODO: Display to GUI.
 		}
 	}
 	
@@ -179,8 +183,10 @@ public class LocalEngine extends Engine {
 				LocalCell cell = cells[i][j];
 				if (cell.getAgents().size() > 0) {
 					System.out.print("* ");
+					gui.setColor(j, i, CellGrid.agent1);
 				} else {
 					System.out.print("- ");
+					gui.setColor(j, i, CellGrid.empty);
 				}
 			}
 			System.out.println();
@@ -195,14 +201,14 @@ public class LocalEngine extends Engine {
 				while (messageType != -1) {
 					messageType = in.read();
 					switch (messageType) {
-					case Protocol.SENDAGENT:
-						ReceivedAgent newAgent = Protocol.sendAgent(in);
-						
+					case Message.SENDAGENT:
+						Message message = new Message(this.turn, true);
+						ReceivedAgent newAgent = message.recvAgent(in);
 						this.placeAgent(newAgent.getX(), newAgent.getY(),
 								newAgent.getAgent());
 						break;
-					case Protocol.ENDTURN:
-						int turn = Protocol.endTurn(in);
+					case Message.ENDTURN:
+						int turn = Message.endTurn(in);
 						messageType = -1;
 					}
 				}
@@ -218,13 +224,14 @@ public class LocalEngine extends Engine {
 		int rHeight = this.height;
 		int rTlx = this.width - rWidth;
 		int rTly = 0;
-		Protocol.offerHelpResp(remote.out, rTlx, rTly, rWidth, rHeight,
+		Message.sendOfferHelpResp(remote.out, rTlx, rTly, rWidth, rHeight,
 				globalWidth, globalHeight);
 		for (int i = rTlx; i < rWidth; i++) {
 			for (int j = rTly; j < rHeight; j++) {
 				LocalCell cell = getCell(i, j);
 				for (Agent a : cell.getAgents()) {
-					Protocol.sendAgent(remote.out, cell.getX(), cell.getY(), a);
+					Message message = new Message(this.turn, true);
+					message.sendAgent(remote.out, cell.getX(), cell.getY(), a);
 				}
 			}
 		}
@@ -233,6 +240,8 @@ public class LocalEngine extends Engine {
 		// TODO: Actually change the size of the data structure that
 		// holds the cells.
 		this.width = this.width - rWidth;
+		gui.dispose();
+		gui = new CellGrid(height, width, tlx, tly);
 		
 	}
 	
@@ -252,8 +261,8 @@ public class LocalEngine extends Engine {
 				InetAddress other = InetAddress.getByName(args[0]);
 				Socket socket = new Socket(other, port);
 				RemoteEngine server = new RemoteEngine(socket);
-				Protocol.offerHelpReq(server.out);
-				OfferHelpResponse r = Protocol.offerHelpResp(server.in);
+				Message.sendOfferHelpReq(server.out);
+				OfferHelpResponse r = Message.recvOfferHelpResp(server.in);
 				engine = new LocalEngine(r.getTlx(), r.getTly(), r.getWidth(),
 						r.getHeight(), r.getGlobalWidth(), r.getGlobalHeight());
 				server.setEngine(engine);
@@ -272,7 +281,7 @@ public class LocalEngine extends Engine {
 				RemoteEngine client = new RemoteEngine(clientSocket, engine);
 				// This is to read the offerHelpReq message. This
 				// should be in a method.
-				if (client.in.read() != Protocol.OFFERHELP) {
+				if (client.in.read() != Message.OFFERHELP) {
 					throw new Exception("Expected offer help request.");
 				}
 				// TODO: Use a smart algorithm to figure out what
