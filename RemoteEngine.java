@@ -41,6 +41,7 @@ public class RemoteEngine extends Engine {
 	public void sendAgent(RemoteCell newCell, Agent agent) {
 		// TODO: Send a 'sendAgent' request to the remote machine using
 		// the message protocol.
-		Protocol.sendAgent(out, newCell.x, newCell.y, agent);
+		Message message = new Message(localEngine.turn, true);
+		message.sendAgent(out, newCell.x, newCell.y, agent);
 	}
 }

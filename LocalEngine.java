@@ -108,7 +108,7 @@ public class LocalEngine extends Engine {
 			}
 			rollback = false;
 			for(int j=0;j<peerList.size();j++){
-				Protocol.endTurn(peerList.get(j).out, turn);
+				Message.endTurn(peerList.get(j).out, turn);
 			}
 			handleMessages();
 			print();
@@ -191,12 +191,13 @@ public class LocalEngine extends Engine {
 				while(messageType != -1){
 					messageType = in.read();
 					switch(messageType){
-					case Protocol.SENDAGENT:
-						ReceivedAgent newAgent = Protocol.sendAgent(in);
+					case Message.SENDAGENT:
+						Message message = new Message(this.turn, true);
+						ReceivedAgent newAgent = message.recvAgent(in);
 						this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
 						break;
-					case Protocol.ENDTURN:
-						int turn = Protocol.endTurn(in);
+					case Message.ENDTURN:
+						int turn = Message.endTurn(in);
 						messageType = -1;	
 					}
 				}
@@ -212,12 +213,13 @@ public class LocalEngine extends Engine {
 		int rHeight = this.height;
 		int rTlx = this.width - rWidth;
 		int rTly = 0;
-		Protocol.offerHelpResp(remote.out, rTlx, rTly, rWidth, rHeight, globalWidth, globalHeight);
+		Message.sendOfferHelpResp(remote.out, rTlx, rTly, rWidth, rHeight, globalWidth, globalHeight);
 		for(int i= rTlx; i < rWidth; i++){
 			for(int j = rTly; j < rHeight; j++){
 				LocalCell cell = getCell(i, j);
 				for(Agent a : cell.agents){
-					Protocol.sendAgent(remote.out, cell.x, cell.y, a);
+					Message message = new Message(this.turn, true);
+					message.sendAgent(remote.out, cell.x, cell.y, a);
 				}
 			}		
 		}
@@ -247,8 +249,8 @@ public class LocalEngine extends Engine {
 				InetAddress other = InetAddress.getByName(args[0]);
 				Socket socket = new Socket(other, port);
 				RemoteEngine server = new RemoteEngine(socket);
-				Protocol.offerHelpReq(server.out);
-				OfferHelpResponse r = Protocol.offerHelpResp(server.in);
+				Message.sendOfferHelpReq(server.out);
+				OfferHelpResponse r = Message.recvOfferHelpResp(server.in);
 				engine = new LocalEngine(r.tlx, r.tly, r.width, r.height, r.globalWidth,
 						r.globalHeight);
 				server.setEngine(engine);
@@ -266,7 +268,7 @@ public class LocalEngine extends Engine {
 				RemoteEngine client = new RemoteEngine(clientSocket, engine);
 				//This is to read the offerHelpReq message.  This
 				//should be in a method.
-				if(client.in.read() != Protocol.OFFERHELP){
+				if(client.in.read() != Message.OFFERHELP){
 					throw new Exception("Expected offer help request.");
 				}
 				// TODO: Use a smart algorithm to figure out what
