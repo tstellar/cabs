@@ -66,8 +66,8 @@ public class CellGrid extends JFrame{
 		}
     }*/
     public void setColor(int xPos, int yPos, Color color){
-        myList.get(yPos-tly).get(xPos-tlx).setBackground(color);
-        //myList.get(yPos).get(xPos).setBackground(color);
+        //myList.get(yPos-tly).get(xPos-tlx).setBackground(color);
+        myList.get(yPos).get(xPos).setBackground(color);
     }
 
     //could extend anything that's Swing (not awt)
