@@ -22,11 +22,13 @@ public class ZeroconfPeerFinder extends PeerFinder implements RegisterListener,
 	protected DNSSDService browser = null;
 	
 	public static final String SERVICE_TYPE = "_cabs._tcp";
+	public static final int SERVICE_PORT = 1234;
 	
 	@Override
 	public void register() {
 		try {
-			localRegistration = DNSSD.register(null, SERVICE_TYPE, 1234, this);
+			localRegistration = DNSSD.register(null, SERVICE_TYPE,
+					SERVICE_PORT, this);
 		} catch (DNSSDException e) {
 			e.printStackTrace();
 		}
