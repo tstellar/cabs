@@ -2,8 +2,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -58,7 +58,7 @@ public class LocalEngine extends Engine {
 			//System.err.println("The byte array is of length " + b.length);
 			ByteArrayInputStream s = new ByteArrayInputStream(b);
 			try {
-				ObjectInputStream ois = new ObjectInputStream(s);
+				DataInputStream ois = new DataInputStream(s);
 				int x = ois.readInt();
 				int y = ois.readInt();
 				int count = ois.readInt();
@@ -187,7 +187,7 @@ public class LocalEngine extends Engine {
 		for(int i=0; i< peerList.size(); i++){
 			int messageType = 0;
 			try{
-				ObjectInputStream in = (ObjectInputStream)peerList.get(i).in; 
+				DataInputStream in = (DataInputStream)peerList.get(i).in; 
 				while(messageType != -1){
 					messageType = in.read();
 					switch(messageType){

@@ -1,6 +1,6 @@
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.DataOutputStream;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 
@@ -46,9 +46,9 @@ public class LocalCell extends Cell {
 
 	public byte[] serialize() {
 		ByteArrayOutputStream s = new ByteArrayOutputStream();
-		ObjectOutputStream oos;
+		DataOutputStream oos;
 		try {
-			oos = new ObjectOutputStream(s);
+			oos = new DataOutputStream(s);
 			oos.writeInt(x);
 			oos.writeInt(y);
 			oos.writeInt(agents.size());

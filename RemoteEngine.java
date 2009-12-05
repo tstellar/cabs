@@ -2,21 +2,21 @@ import java.io.IOException;
 import java.net.Socket;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
+import java.io.DataOutputStream;
+import java.io.DataInputStream;
 
 public class RemoteEngine extends Engine {
 
 	Socket socket;
-	ObjectInputStream in;
-	ObjectOutputStream out;
+	DataInputStream in;
+	DataOutputStream out;
 	LocalEngine localEngine;
 
 	public RemoteEngine(Socket socket){
 		this.socket = socket;
 		try{
-			this.out = new ObjectOutputStream(socket.getOutputStream());
-			this.in = new ObjectInputStream(socket.getInputStream());
+			this.out = new DataOutputStream(socket.getOutputStream());
+			this.in = new DataInputStream(socket.getInputStream());
 		}catch(Exception e){
 			e.printStackTrace();
 		}
