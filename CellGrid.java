@@ -15,36 +15,29 @@ public class CellGrid extends JFrame{
     public static final Color agent2 = Color.yellow;
     public static final Color mixed = Color.green;
     ArrayList<ArrayList<myJCanvas>> myList;
-    private int tlx;
-    private int tly;
 
     //Takes the number of x and y cells (width and height) and makes the grid
-    public CellGrid(int rows, int cols, int tlx, int tly){
+    public CellGrid(int rows, int cols,int tlx, int tly){
 
         //int xCellSize = WINDOW_WIDTH/(xCells+1); //gridlayout auto-resizes
         //int yCellSize = WINDOW_HEIGHT/(yCells+1);
         //int xCellSize = 65;
         //int yCellSize = 65;
-    	this.tlx = tlx;
-    	this.tly = tly;
 
-        JPanel panel1 = new JPanel(); //just a holder
-        GridLayout layout1 = new GridLayout(rows,cols,5,5); //sets the width and height
-        panel1.setLayout(layout1); //adds the layout we just made
-        panel1.setBackground(Color.black); //sets the background black
-        setTitle("CABS"); //sets the title
-        setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+	GridLayout layout1 = new GridLayout(rows,cols,5,5); //sets the width and height
+        this.setLayout(layout1); //adds the layout we just made
+        this.setBackground(Color.black); //sets the background black
+        setTitle("CABS - " + tlx + "," + tly + " " + rows + "x" + cols); //sets the title
+//        setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
         LineBorder bord1 = new LineBorder(Color.black, 5); //border because it looked funny before
-        panel1.setBorder(bord1); //adds the border
-        JScrollPane scroller = new JScrollPane(panel1); //makes a scroll pane from the panel
-        add(scroller); //adds the scroll pane to CellGrid
-
+//        this.setBorder(bord1); //adds the border
+//        JScrollPane scroller = new JScrollPane(panel1); //makes a scroll pane from the panel
+  //      add(scroller); //adds the scroll pane to CellGrid
+	pack();
         myList =  //array list of array lists
                 new ArrayList<ArrayList<myJCanvas>>();
         
-        setSize(500,500);
-        setVisible(true); //make the JFrame visible
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+       setSize(500,500);
 
         //for(int i=0;i<rows;i++) //add the second set of array lists to the first
         //    myList.add(new ArrayList<myJCanvas>());
@@ -52,9 +45,11 @@ public class CellGrid extends JFrame{
             myList.add(new ArrayList<myJCanvas>());
             for(int y=0;y<cols;y++ ){ //steps through the lists and makes canvases
                 myList.get(x).add(new myJCanvas());
-                panel1.add(myList.get(x).get(y)); //adds the canvases to the panel
+                this.add(myList.get(x).get(y)); //adds the canvases to the panel
             }
         }
+        setVisible(true); //make the JFrame visible
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
     }
     
@@ -82,7 +77,7 @@ public class CellGrid extends JFrame{
             this.setPreferredSize(new Dimension(60,60));
         }
         public myJCanvas(){
-            this.setSize(60, 60);
+            this.setSize(30, 30);
             this.setBackground(Color.blue);
         }
     }
