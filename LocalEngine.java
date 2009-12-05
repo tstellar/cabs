@@ -10,6 +10,8 @@ import java.net.Socket;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.PriorityQueue;
+import java.util.Stack;
 import java.nio.channels.SocketChannel;
 
 public class LocalEngine extends Engine {
@@ -21,11 +23,15 @@ public class LocalEngine extends Engine {
 	int turn = 0;
 	boolean rollback = false;
 	HashMap<Integer, ArrayList<byte[]>> states;
+	PriorityQueue<Message> recvdMessages;
+	PriorityQueue<Message> sentMessages;
 	CellGrid gui;
 
 	public LocalEngine(int tlx, int tly, int width, int height, int globalWidth, int globalHeight) {
 		super(tlx, tly, width, height);
 		this.states = new HashMap<Integer, ArrayList<byte[]>>();
+		this.recvdMessages = new PriorityQueue<Message>();
+		this.sentMessages = new PriorityQueue<Message>();
 		this.globalWidth = globalWidth;
 		this.globalHeight = globalHeight;
 		peerList = new ArrayList<RemoteEngine>();
@@ -58,17 +64,17 @@ public class LocalEngine extends Engine {
 			//System.err.println("The byte array is of length " + b.length);
 			ByteArrayInputStream s = new ByteArrayInputStream(b);
 			try {
-				DataInputStream ois = new DataInputStream(s);
-				int x = ois.readInt();
-				int y = ois.readInt();
-				int count = ois.readInt();
+				DataInputStream dis = new DataInputStream(s);
+				int x = dis.readInt();
+				int y = dis.readInt();
+				int count = dis.readInt();
 				/*System.err.println(MessageFormat.format(
 						"Rolling back cell ({0}, {1}); {2} agents.", x,
 						y, count));*/
 				LocalCell cell = getCell(x,y);
 				cell.agents.clear();
 				while(count-- != 0){
-					cell.add((Agent)ois.readObject());
+					cell.add(Agent.read(dis));
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -187,18 +193,23 @@ public class LocalEngine extends Engine {
 		for(int i=0; i< peerList.size(); i++){
 			int messageType = 0;
 			try{
-				DataInputStream in = (DataInputStream)peerList.get(i).in; 
+				InputStream in = peerList.get(i).in; 
 				while(messageType != -1){
 					messageType = in.read();
 					switch(messageType){
 					case Message.SENDAGENT:
 						Message message = new Message(this.turn, true);
 						ReceivedAgent newAgent = message.recvAgent(in);
+						System.out.println("Recieved agent at " + newAgent.x + "," + newAgent.y);
 						this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
 						break;
 					case Message.ENDTURN:
+						System.out.println("END OF TURN");
 						int turn = Message.endTurn(in);
-						messageType = -1;	
+						messageType = -1;
+						break;
+					default:
+						System.out.println("Unknown Message type " + messageType);
 					}
 				}
 			}catch(Exception e){
@@ -277,7 +288,7 @@ public class LocalEngine extends Engine {
 	
 				// We probably need some kind of ACK here.
 
-				engine.placeAgents(5);
+				engine.placeAgents(10);
 
 			}
 			engine.print();

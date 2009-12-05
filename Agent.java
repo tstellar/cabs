@@ -67,6 +67,7 @@ public abstract class Agent{
 		Agent agent = null;
 		try{
 		String classname = in.readUTF();
+		System.out.println(classname);
 		Class c = Class.forName(classname);
 		agent = (Agent)c.newInstance();
 		agent.turn = in.readInt();

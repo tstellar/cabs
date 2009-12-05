@@ -8,15 +8,15 @@ import java.io.DataInputStream;
 public class RemoteEngine extends Engine {
 
 	Socket socket;
-	DataInputStream in;
-	DataOutputStream out;
+	InputStream in;
+	OutputStream out;
 	LocalEngine localEngine;
 
 	public RemoteEngine(Socket socket){
 		this.socket = socket;
 		try{
-			this.out = new DataOutputStream(socket.getOutputStream());
-			this.in = new DataInputStream(socket.getInputStream());
+			this.out = socket.getOutputStream();
+			this.in = socket.getInputStream();
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -41,6 +41,7 @@ public class RemoteEngine extends Engine {
 	public void sendAgent(RemoteCell newCell, Agent agent) {
 		// TODO: Send a 'sendAgent' request to the remote machine using
 		// the message protocol.
+		System.out.println("Sending " + newCell.x + "," + newCell.y);
 		Message message = new Message(localEngine.turn, true);
 		message.sendAgent(out, newCell.x, newCell.y, agent);
 	}
