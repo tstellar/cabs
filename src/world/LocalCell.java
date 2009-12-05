@@ -1,8 +1,8 @@
 package world;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 import engine.LocalEngine;
@@ -10,13 +10,13 @@ import engine.LocalEngine;
 public class LocalCell extends Cell {
 	LocalEngine engine;
 	private ArrayList<Agent> agents;
-	
+
 	public LocalCell(int x, int y, LocalEngine engine) {
 		super(x, y);
 		setAgents(new ArrayList<Agent>());
 		this.engine = engine;
 	}
-	
+
 	public void go(int turn) {
 		int totalAgents = getAgents().size();
 		for (int i = 0; i < totalAgents; i++) {
@@ -30,28 +30,28 @@ public class LocalCell extends Cell {
 			}
 		}
 	}
-	
+
 	@Override
 	public void move(Agent agent, int x, int y) {
 		engine.moveAgent(agent, this, x, y);
 	}
-	
+
 	@Override
 	public void add(Agent agent) {
 		agent.setCell(this);
 		getAgents().add(agent);
 	}
-	
+
 	public void remove(Agent agent) {
 		getAgents().remove(agent);
 		// Handle error.
 	}
-	
+
 	public byte[] serialize() {
 		ByteArrayOutputStream s = new ByteArrayOutputStream();
-		ObjectOutputStream oos;
+		DataOutputStream oos;
 		try {
-			oos = new ObjectOutputStream(s);
+			oos = new DataOutputStream(s);
 			oos.writeInt(x);
 			oos.writeInt(y);
 			oos.writeInt(agents.size());
@@ -69,17 +69,17 @@ public class LocalCell extends Cell {
 		}
 		return s.toByteArray();
 	}
-	
+
 	public void resetAgents() {
 		for (Agent a : getAgents()) {
 			a.hasMoved = false;
 		}
 	}
-	
+
 	public void setAgents(ArrayList<Agent> agents) {
 		this.agents = agents;
 	}
-	
+
 	public ArrayList<Agent> getAgents() {
 		return agents;
 	}
