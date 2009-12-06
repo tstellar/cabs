@@ -1,169 +1,141 @@
 package net;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Comparator;
 
 import world.Agent;
 
 public class Message {
 
 	public static class OfferHelpResponse {
-		private int tlx;
-		private int tly;
-		private int width;
-		private int height;
-		private int globalWidth;
-		private int globalHeight;
-
-		public void setTlx(int tlx) {
-			this.tlx = tlx;
-		}
-
-		public int getTlx() {
-			return tlx;
-		}
-
-		public void setTly(int tly) {
-			this.tly = tly;
-		}
-
-		public int getTly() {
-			return tly;
-		}
-
-		public void setWidth(int width) {
-			this.width = width;
-		}
-
-		public int getWidth() {
-			return width;
-		}
-
-		public void setHeight(int height) {
-			this.height = height;
-		}
-
-		public int getHeight() {
-			return height;
-		}
-
-		public void setGlobalWidth(int globalWidth) {
-			this.globalWidth = globalWidth;
-		}
-
-		public int getGlobalWidth() {
-			return globalWidth;
-		}
-
-		public void setGlobalHeight(int globalHeight) {
-			this.globalHeight = globalHeight;
-		}
-
-		public int getGlobalHeight() {
-			return globalHeight;
-		}
+		public int tlx;
+		public int tly;
+		public int width;
+		public int height;
+		public int globalWidth;
+		public int globalHeight;
+		public int sendertlx;
+		public int sendertly;
+		public int senderw;
+		public int senderh;
 	}
 
 	public static class ReceivedAgent {
-		private int x;
-		private int y;
-		private Agent agent;
-
-		@Override
-		public String toString() {
-			return getX() + ", " + getY() + getAgent().toString();
-		}
-
-		public void setX(int x) {
-			this.x = x;
-		}
-
-		public int getX() {
-			return x;
-		}
-
-		public void setY(int y) {
-			this.y = y;
-		}
-
-		public int getY() {
-			return y;
-		}
-
-		public void setAgent(Agent agent) {
-			this.agent = agent;
-		}
-
-		public Agent getAgent() {
-			return agent;
-		}
+		public int x;
+		public int y;
+		public Agent agent;
 	}
 
 	public static final byte OFFERHELP = 0x1;
 	public static final byte SENDAGENT = 0x2;
 	public static final byte ENDTURN = 0x3;
 
-	private int sendTurn;
-	boolean sign;
-	private int recvTurn;
+	public static Comparator<Message> sendTurnComparator = new Comparator<Message>() {
 
-	public Message(int sendTurn, boolean sign) {
+		public int compare(Message o1, Message o2) {
+			if (o1.sendTurn > o2.sendTurn)
+				return 1;
+			else if (o1.sendTurn < o2.sendTurn)
+				return -1;
+			else
+				return 0;
+
+		}
+
+	};
+
+	// This compares things in the opposite order so that messages in the
+	// priority queue will be sorted correctly.
+	public static Comparator<Message> reverseSendTurnComparator = new Comparator<Message>() {
+
+		public int compare(Message o1, Message o2) {
+			if (o1.sendTurn > o2.sendTurn)
+				return -1;
+			else if (o1.sendTurn < o2.sendTurn)
+				return 1;
+			else
+				return 0;
+
+		}
+
+	};
+
+	public void print() {
+		System.out.println("sendTurn: " + sendTurn + " messageType: " + messageType + " sign: "
+				+ sign + " data: " + data);
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		boolean result = false;
+		System.err.println("Message.equals called");
+		if (other instanceof Message) {
+			Message otherMsg = (Message) other;
+			this.print();
+			otherMsg.print();
+			result = ((this.sendTurn == otherMsg.sendTurn)
+					&& (this.messageType == otherMsg.messageType) && (this.sign != otherMsg.sign) && Arrays
+					.equals(this.data, otherMsg.data));
+		}
+		System.out.println("Result of equals: " + result);
+		return result;
+	}
+
+	public int sendTurn;
+	public boolean sign;
+	private int recvTurn;
+	public int messageType;
+	private byte[] data;
+	public int id;
+
+	public Message(int sendTurn, boolean sign, int id) {
 		this.sendTurn = sendTurn;
 		this.sign = sign;
+		this.id = id;
 	}
 
-	public Message(int recvTurn) {
+	public Message(int recvTurn, int messageType) {
 		this.recvTurn = recvTurn;
+		this.messageType = messageType;
 	}
 
-	private void writeMessage(ObjectOutputStream oos, byte messageType) {
+	private void writeMessage(DataOutputStream dos, byte messageType, int dataSize) {
 		try {
-			oos.writeByte(messageType);
-			oos.writeInt(sendTurn);
-			oos.writeBoolean(sign);
+			this.messageType = messageType;
+			dos.writeByte(messageType);
+			dos.writeInt(sendTurn);
+			dos.writeBoolean(sign);
+			dos.writeInt(dataSize);
+			dos.flush();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void readMessage(ObjectInputStream ois) {
+	private int readMessage(InputStream is) {
+		int dataSize = 0;
 		try {
-			sendTurn = ois.readInt();
-			sign = ois.readBoolean();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void writeMessage(DataOutputStream oos, byte messageType, int dataSize) {
-		try {
-			oos.writeByte(messageType);
-			oos.writeInt(sendTurn);
-			oos.writeBoolean(sign);
-			oos.writeInt(dataSize);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private int readMessage(DataInputStream ois) {
-		try {
-			sendTurn = ois.readInt();
-			sign = ois.readBoolean();
-			return ois.readInt();
+			DataInputStream dis = new DataInputStream(is);
+			sendTurn = dis.readInt();
+			sign = dis.readBoolean();
+			dataSize = dis.readInt();
+			System.out.println("Read Message: sendTurn =" + sendTurn + " sign " + sign
+					+ " dataSize " + dataSize);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return -1;
 		}
+		return dataSize;
 	}
 
-	public static void sendOfferHelpReq(DataOutputStream out) {
+	public static void sendOfferHelpReq(OutputStream out) {
 		try {
 			out.write(OFFERHELP);
 			out.flush();
@@ -173,53 +145,79 @@ public class Message {
 
 	}
 
-	public static void sendOfferHelpResp(DataOutputStream out, int tlx, int tly, int width,
-			int height, int globalWidth, int globalHeight) {
+	public static void sendOfferHelpResp(OutputStream out, int tlx, int tly, int width, int height,
+			int globalWidth, int globalHeight, int sendertlx, int sendertly, int senderw,
+			int senderh) {
 		try {
-			ByteBuffer data = ByteBuffer.allocate(25);
-			data.put(OFFERHELP);
-			data.putInt(tlx);
-			data.putInt(tly);
-			data.putInt(width);
-			data.putInt(height);
-			data.putInt(globalWidth);
-			data.putInt(globalHeight);
-			out.write(data.array());
-			out.flush();
+			DataOutputStream dos = new DataOutputStream(out);
+			dos.write(OFFERHELP);
+			dos.writeInt(tlx);
+			dos.writeInt(tly);
+			dos.writeInt(width);
+			dos.writeInt(height);
+			dos.writeInt(globalWidth);
+			dos.writeInt(globalHeight);
+			dos.writeInt(sendertlx);
+			dos.writeInt(sendertly);
+			dos.writeInt(senderw);
+			dos.writeInt(senderh);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static OfferHelpResponse recvOfferHelpResp(DataInputStream in) {
+	public static OfferHelpResponse recvOfferHelpResp(InputStream in) {
 		OfferHelpResponse r = new OfferHelpResponse();
 		try {
 			// TODO verify message type
-			in.read();
-			r.setTlx(in.readInt());
-			r.setTly(in.readInt());
-			r.setWidth(in.readInt());
-			r.setHeight(in.readInt());
-			r.setGlobalWidth(in.readInt());
-			r.setGlobalHeight(in.readInt());
+			DataInputStream dis = new DataInputStream(in);
+			dis.read();
+			r.tlx = dis.readInt();
+			r.tly = dis.readInt();
+			r.width = dis.readInt();
+			r.height = dis.readInt();
+			r.globalWidth = dis.readInt();
+			r.globalHeight = dis.readInt();
+			r.sendertlx = dis.readInt();
+			r.sendertly = dis.readInt();
+			r.senderw = dis.readInt();
+			r.senderh = dis.readInt();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return r;
 	}
 
+	public void sendMessage(OutputStream out) {
+		DataOutputStream dos = new DataOutputStream(out);
+		writeMessage(dos, (byte) this.messageType, data.length);
+		try {
+			dos.write(data, 0, data.length);
+			dos.flush();
+			out.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	/*
 	 * sendAgent: +Request: requestType (1 byte) X (4 bytes) Y (4 bytes)
 	 * Agent(serialized) (? bytes)
 	 */
-	public void sendAgent(DataOutputStream out, int x, int y, Agent agent) {
+	public void sendAgent(OutputStream out, int x, int y, Agent agent) {
 		try {
-			byte[] bytes = agent.toBytes();
-			int messageSize = bytes.length + 4 + 4 + 4;
-			writeMessage(out, SENDAGENT, messageSize);
-			out.writeInt(x);
-			out.writeInt(y);
-			out.write(bytes, 0, bytes.length);
+			DataOutputStream dos = new DataOutputStream(out);
+			byte[] agentBytes = agent.toBytes();
+			int messageSize = agentBytes.length + 4 + 4;
+			ByteBuffer buffer = ByteBuffer.allocate(messageSize);
+			writeMessage(dos, SENDAGENT, messageSize);
+			buffer.putInt(x);
+			buffer.putInt(y);
+			buffer.put(agentBytes);
+			byte[] bytes = buffer.array();
+			this.data = bytes;
+			dos.write(bytes, 0, bytes.length);
+			dos.flush();
 			out.flush();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -227,29 +225,39 @@ public class Message {
 		}
 	}
 
-	public ReceivedAgent recvAgent(DataInputStream in) {
+	public ReceivedAgent recvAgent() {
 		ReceivedAgent result = null;
-		
 		try {
-			int dataSize = readMessage(in);
-			byte[] data = in.read
 			result = new ReceivedAgent();
-			result.x = in.readInt();
-			result.y = in.readInt();
-			result.agent = Agent.read(in);
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
+			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
+			result.x = dis.readInt();
+			result.y = dis.readInt();
+			result.agent = Agent.read(dis);
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
 		return result;
 	}
 
-	public static void endTurn(DataOutputStream out, int turn) {
+	public void recvAgent(InputStream in) {
+
+		try {
+			int dataSize = readMessage(in);
+			System.out.println("size:" + dataSize);
+			data = new byte[dataSize];
+			int bytesRead = 0;
+			do {
+				bytesRead += in.read(data, bytesRead, dataSize - bytesRead);
+				System.out.println("Read " + bytesRead + " of " + dataSize);
+			} while (bytesRead < dataSize);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	public static void endTurn(OutputStream out, int turn) {
 		try {
 			ByteBuffer data = ByteBuffer.allocate(5);
 			data.put(ENDTURN);
@@ -261,11 +269,12 @@ public class Message {
 		}
 	}
 
-	public static int endTurn(DataInputStream in) {
+	public static int endTurn(InputStream in) {
 		int turn = -1;
 		try {
+			DataInputStream dis = new DataInputStream(in);
 			// TODO: Check message type.
-			turn = in.readInt();
+			turn = dis.readInt();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

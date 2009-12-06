@@ -55,7 +55,6 @@ public abstract class Agent {
 				Class t = f.getType();
 				out.writeUTF(f.getName());
 				String typeName = t.getName();
-				System.out.println(typeName);
 				if (typeName.equals("int")) {
 					out.writeInt(f.getInt(this));
 				}

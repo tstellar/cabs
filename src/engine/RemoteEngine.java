@@ -1,10 +1,11 @@
 package engine;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
 import net.Message;
+import net.MessageReader;
 import world.Agent;
 import world.Cell;
 import world.RemoteCell;
@@ -12,27 +13,38 @@ import world.RemoteCell;
 public class RemoteEngine extends Engine {
 
 	Socket socket;
-	DataInputStream in;
-	DataOutputStream out;
+	InputStream in;
+	OutputStream out;
 	LocalEngine localEngine;
 
-	public RemoteEngine(Socket socket) {
+	MessageReader reader;
+	Thread readerThread;
+	int id;
+
+	public RemoteEngine(Socket socket, int id) {
 		this.socket = socket;
+		this.id = id;
 		try {
-			this.out = new DataOutputStream(socket.getOutputStream());
-			this.in = new DataInputStream(socket.getInputStream());
+			this.out = socket.getOutputStream();
+			this.in = socket.getInputStream();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public RemoteEngine(Socket socket, LocalEngine localEngine) {
-		this(socket);
+	public RemoteEngine(Socket socket, LocalEngine localEngine, int id) {
+		this(socket, id);
 		this.localEngine = localEngine;
 	}
 
 	public void setEngine(LocalEngine engine) {
 		this.localEngine = engine;
+	}
+
+	public void listen() {
+		reader = new MessageReader(localEngine, in);
+		readerThread = new Thread(reader);
+		readerThread.start();
 	}
 
 	@Override
@@ -45,7 +57,9 @@ public class RemoteEngine extends Engine {
 	public void sendAgent(RemoteCell newCell, Agent agent) {
 		// TODO: Send a 'sendAgent' request to the remote machine using
 		// the message protocol.
-		Message message = new Message(localEngine.turn, true);
-		message.sendAgent(out, newCell.getX(), newCell.getY(), agent);
+		System.out.println("Sending " + newCell.x + "," + newCell.y);
+		Message message = new Message(localEngine.turn, true, id);
+		message.sendAgent(out, newCell.x, newCell.y, agent);
+		localEngine.storeAntimessage(message);
 	}
 }

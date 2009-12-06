@@ -9,7 +9,7 @@ import engine.LocalEngine;
 
 public class LocalCell extends Cell {
 	LocalEngine engine;
-	private ArrayList<Agent> agents;
+	public ArrayList<Agent> agents;
 
 	public LocalCell(int x, int y, LocalEngine engine) {
 		super(x, y);
@@ -49,21 +49,22 @@ public class LocalCell extends Cell {
 
 	public byte[] serialize() {
 		ByteArrayOutputStream s = new ByteArrayOutputStream();
-		DataOutputStream oos;
+		DataOutputStream dos;
 		try {
-			oos = new DataOutputStream(s);
-			oos.writeInt(x);
-			oos.writeInt(y);
-			oos.writeInt(agents.size());
+
+			dos = new DataOutputStream(s);
+			dos.writeInt(x);
+			dos.writeInt(y);
+			dos.writeInt(agents.size());
 			/*
 			 * if(agents.size() != 0) {System.err.println(MessageFormat.format(
 			 * "Serializing cell ({0}, {1}); {2} agents.", x, y,
 			 * agents.size())); }
 			 */
 			for (Agent a : agents) {
-				oos.writeObject(a);
+				dos.write(a.toBytes());
 			}
-			oos.flush();
+			dos.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -7,6 +7,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.PriorityQueue;
+import java.util.Random;
 
 import net.Message;
 import net.Message.OfferHelpResponse;
@@ -23,15 +26,24 @@ public class LocalEngine extends Engine {
 	ArrayList<RemoteEngine> peerList;
 	int globalWidth;
 	int globalHeight;
-	int turn = 0;
+	public int turn = 0;
 	boolean rollback = false;
 	HashMap<Integer, ArrayList<byte[]>> states;
 
+	public PriorityQueue<Message> recvdMessages;
+	LinkedList<Message> processedMessages;
+	PriorityQueue<Message> sentMessages;
+
 	CellGrid gui;
+
+	Random random = new Random();
 
 	public LocalEngine(int tlx, int tly, int width, int height, int globalWidth, int globalHeight) {
 		super(tlx, tly, width, height);
 		this.states = new HashMap<Integer, ArrayList<byte[]>>();
+		this.recvdMessages = new PriorityQueue<Message>(8, Message.sendTurnComparator);
+		this.sentMessages = new PriorityQueue<Message>(8, Message.reverseSendTurnComparator);
+		this.processedMessages = new LinkedList<Message>();
 		this.globalWidth = globalWidth;
 		this.globalHeight = globalHeight;
 		peerList = new ArrayList<RemoteEngine>();
@@ -57,51 +69,67 @@ public class LocalEngine extends Engine {
 	}
 
 	private void rollback(int turn) {
-		// TODO: Send off anti-message queue.
+		System.err.println("Rolling back from turn " + this.turn + " to turn " + turn);
 		rollback = true;
 		ArrayList<byte[]> state = states.get(turn);
 		for (byte[] b : state) {
 			// System.err.println("The byte array is of length " + b.length);
 			ByteArrayInputStream s = new ByteArrayInputStream(b);
 			try {
-				DataInputStream ois = new DataInputStream(s);
-				int x = ois.readInt();
-				int y = ois.readInt();
-				int count = ois.readInt();
-
+				DataInputStream dis = new DataInputStream(s);
+				int x = dis.readInt();
+				int y = dis.readInt();
+				int count = dis.readInt();
 				/*
 				 * System.err.println(MessageFormat.format(
 				 * "Rolling back cell ({0}, {1}); {2} agents.", x, y, count));
 				 */
 				LocalCell cell = getCell(x, y);
-				cell.getAgents().clear();
+
+				cell.agents.clear();
 				while (count-- != 0) {
-					cell.add((Agent) ois.readObject());
+					cell.add(Agent.read(dis));
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
+
+		// Put rolled-back events back onto the incoming queue
+		for (Message m : processedMessages) {
+			if (m.sendTurn >= turn) {
+				recvdMessages.offer(m);
+			}
+		}
+
+		// Send antimessages
+		while (!this.sentMessages.isEmpty() && sentMessages.peek().sendTurn >= turn) {
+			Message msg = sentMessages.poll();
+			msg.sendMessage(peerList.get(msg.id).out);
+		}
+
 		this.turn = turn;
 	}
 
 	public void go() {
 
-		while (turn < 20) {
+		while (turn < 50) {
 			// TODO: Remove this only for testing
-			if (turn == 10) {
-				rollback(3);
-			}
+			/*
+			 * if (turn == 10) { rollback(3); }
+			 */
 
 			if (!rollback) {
 				turn++;
 				saveState();
 			}
+
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(25);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+
 			System.out.println("Starting turn " + turn);
 			for (LocalCell[] cell : cells) {
 				for (LocalCell element : cell) {
@@ -120,6 +148,7 @@ public class LocalEngine extends Engine {
 			}
 			handleMessages();
 			print();
+			System.out.println("Ending turn " + turn);
 		}
 	}
 
@@ -191,26 +220,37 @@ public class LocalEngine extends Engine {
 	}
 
 	private void handleMessages() {
-		for (int i = 0; i < peerList.size(); i++) {
-			int messageType = 0;
-			try {
-				DataInputStream in = peerList.get(i).in;
-				while (messageType != -1) {
-					messageType = in.read();
-					switch (messageType) {
-					case Message.SENDAGENT:
-						Message message = new Message(this.turn, true);
-						ReceivedAgent newAgent = message.recvAgent(in);
-						this.placeAgent(newAgent.getX(), newAgent.getY(), newAgent.getAgent());
+
+		try {
+			// It is OK to check if recvdMessages is empty without
+			// synchronizing,
+			// because this has no effect on the process adding things to it.
+			System.out.println("Queue size =" + recvdMessages.size());
+			while (!recvdMessages.isEmpty()) {
+				Message message = null;
+				synchronized (recvdMessages) {
+					if (recvdMessages.peek().sendTurn > this.turn) {
 						break;
-					case Message.ENDTURN:
-						int turn = Message.endTurn(in);
-						messageType = -1;
 					}
+					message = recvdMessages.poll();
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
+				if (message.sendTurn < this.turn) {
+					rollback(message.sendTurn);
+				}
+				switch (message.messageType) {
+				case Message.SENDAGENT:
+
+					ReceivedAgent newAgent = message.recvAgent();
+					System.out.println("Received: (" + newAgent.x + "," + newAgent.y + ")");
+					this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
+					this.processedMessages.add(message);
+					break;
+				case Message.ENDTURN:
+					break;
+				}
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -220,14 +260,16 @@ public class LocalEngine extends Engine {
 		int rHeight = this.height;
 		int rTlx = this.width - rWidth;
 		int rTly = 0;
+
+		this.width = this.width - rWidth;
 		Message.sendOfferHelpResp(remote.out, rTlx, rTly, rWidth, rHeight, globalWidth,
-				globalHeight);
+				globalHeight, tlx, tly, width, height);
 		for (int i = rTlx; i < rWidth; i++) {
 			for (int j = rTly; j < rHeight; j++) {
 				LocalCell cell = getCell(i, j);
-				for (Agent a : cell.getAgents()) {
-					Message message = new Message(this.turn, true);
-					message.sendAgent(remote.out, cell.getX(), cell.getY(), a);
+				for (Agent a : cell.agents) {
+					Message message = new Message(this.turn, true, -1);
+					message.sendAgent(remote.out, cell.x, cell.y, a);
 				}
 			}
 		}
@@ -235,9 +277,17 @@ public class LocalEngine extends Engine {
 		this.peerList.add(remote);
 		// TODO: Actually change the size of the data structure that
 		// holds the cells.
-		this.width = this.width - rWidth;
+
 		gui.dispose();
 		gui = new CellGrid(height, width, tlx, tly);
+
+	}
+
+	public void storeAntimessage(Message message) {
+		message.sign = false;
+		synchronized (sentMessages) {
+			sentMessages.offer(message);
+		}
 
 	}
 
@@ -256,14 +306,17 @@ public class LocalEngine extends Engine {
 				// Use multicast instead.
 				InetAddress other = InetAddress.getByName(args[0]);
 				Socket socket = new Socket(other, port);
-				RemoteEngine server = new RemoteEngine(socket);
+				// TODO Remove magic number.
+				RemoteEngine server = new RemoteEngine(socket, 0);
 				Message.sendOfferHelpReq(server.out);
 				OfferHelpResponse r = Message.recvOfferHelpResp(server.in);
-				engine = new LocalEngine(r.getTlx(), r.getTly(), r.getWidth(), r.getHeight(), r
-						.getGlobalWidth(), r.getGlobalHeight());
+				engine = new LocalEngine(r.tlx, r.tly, r.width, r.height, r.globalWidth,
+						r.globalHeight);
 				server.setEngine(engine);
 				engine.peerList.add(server);
-				server.setCoordinates(0, 0, 5, 10);
+				server.setCoordinates(r.sendertlx, r.sendertly, r.senderw, r.senderh);
+				System.out.printf("%d %d %d %d\n", r.sendertlx, r.sendertly, r.senderw, r.senderh);
+				server.listen();
 				// TODO: Get agents from server.
 			}
 
@@ -273,18 +326,20 @@ public class LocalEngine extends Engine {
 				engine = new LocalEngine(0, 0, globalWidth, globalHeight, globalWidth, globalHeight);
 				ServerSocket serverSocket = new ServerSocket(port);
 				Socket clientSocket = serverSocket.accept();
-				RemoteEngine client = new RemoteEngine(clientSocket, engine);
+				// TODO Remove magic number.
+				RemoteEngine client = new RemoteEngine(clientSocket, engine, 0);
 				// This is to read the offerHelpReq message. This
 				// should be in a method.
 				if (client.in.read() != Message.OFFERHELP)
 					throw new Exception("Expected offer help request.");
+				client.listen();
 				// TODO: Use a smart algorithm to figure out what
 				// coordinates to assign the other node.
 				engine.sendCells(client);
 
 				// We probably need some kind of ACK here.
 
-				engine.placeAgents(5);
+				engine.placeAgents(10);
 
 			}
 			engine.print();
