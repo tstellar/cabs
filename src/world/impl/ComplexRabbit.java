@@ -7,8 +7,8 @@ import world.Agent;
 public class ComplexRabbit extends Agent {
 	final int deathFromAge = 20;
 	Random r = new Random();
-	int energy = 75;
-	int age = 0;
+	public int energy = 75;
+	public int age = 0;
 	
 	@Override
 	public void go() {
