@@ -43,7 +43,8 @@ public abstract class Agent {
 			ArrayList<Field> writeableFields = new ArrayList<Field>();
 			for (Field f : fields) {
 				int modifiers = f.getModifiers();
-				if (Modifier.isFinal(modifiers)) {
+				if (Modifier.isFinal(modifiers) || 
+					!Modifier.isPublic(modifiers)) {
 					continue;
 				}
 				writeableFields.add(f);
