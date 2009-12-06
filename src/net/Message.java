@@ -141,17 +141,13 @@ public class Message {
 	@Override
 	public boolean equals(Object other) {
 		boolean result = false;
-		System.err.println("Message.equals called");
 		if (other instanceof Message) {
 			Message otherMsg = (Message) other;
-			this.print();
-			otherMsg.print();
 			result = ((this.sendTurn == otherMsg.sendTurn)
 					&& (this.messageType == otherMsg.messageType)
 					&& (this.sign != otherMsg.sign) && Arrays.equals(this.data,
 					otherMsg.data));
 		}
-		System.out.println("Result of equals: " + result);
 		return result;
 		}
 
