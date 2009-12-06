@@ -1,5 +1,7 @@
 package net;
 
+import java.util.Map;
+
 import javax.swing.event.EventListenerList;
 
 public abstract class PeerFinder {
@@ -30,7 +32,7 @@ public abstract class PeerFinder {
 
 	public abstract void stopSearching();
 
-	public abstract void register();
+	public abstract void register(Map<String, String> attributes);
 
 	public abstract void unregister();
 
