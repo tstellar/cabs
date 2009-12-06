@@ -1,3 +1,4 @@
+package net;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -9,32 +10,94 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Comparator;
 
-class OfferHelpResponse {
-	int tlx;
-	int tly;
-	int width;
-	int height;
-	int globalWidth;
-	int globalHeight;
-	int sendertlx;
-	int sendertly;
-	int senderw;
-	int senderh;
-}
-
-class ReceivedAgent {
-	int x;
-	int y;
-	Agent agent;
-
-	@Override
-	public String toString() {
-		return x + ", " + y + agent.toString();
-	}
-}
+import world.Agent;
 
 public class Message {
+	
+	public static class OfferHelpResponse {
+		private int tlx;
+		private int tly;
+		private int width;
+		private int height;
+		private int globalWidth;
+		private int globalHeight;
+		public int sendertlx;
+		public int sendertly;
+		public int senderw;
+		public int senderh;
+		public void setTlx(int tlx) {
+			this.tlx = tlx;
+		}
+		public int getTlx() {
+			return tlx;
+		}
+		public void setTly(int tly) {
+			this.tly = tly;
+		}
+		public int getTly() {
+			return tly;
+		}
+		public void setWidth(int width) {
+			this.width = width;
+		}
+		public int getWidth() {
+			return width;
+		}
+		public void setHeight(int height) {
+			this.height = height;
+		}
+		public int getHeight() {
+			return height;
+		}
+		public void setGlobalWidth(int globalWidth) {
+			this.globalWidth = globalWidth;
+		}
+		public int getGlobalWidth() {
+			return globalWidth;
+		}
+		public void setGlobalHeight(int globalHeight) {
+			this.globalHeight = globalHeight;
+		}
+		public int getGlobalHeight() {
+			return globalHeight;
+		}
+	}
+	
+	public static class ReceivedAgent {
+		private int x;
+		private int y;
+		private Agent agent;
+		
+		@Override
+		public String toString() {
+			return getX() + ", " + getY() + getAgent().toString();
+		}
 
+		public void setX(int x) {
+			this.x = x;
+		}
+
+		public int getX() {
+			return x;
+		}
+
+		public void setY(int y) {
+			this.y = y;
+		}
+
+		public int getY() {
+			return y;
+		}
+
+		public void setAgent(Agent agent) {
+			this.agent = agent;
+		}
+
+		public Agent getAgent() {
+			return agent;
+		}
+	}
+	
 	public static final byte OFFERHELP = 0x1;
 	public static final byte SENDAGENT = 0x2;
 	public static final byte ENDTURN = 0x3;
@@ -92,12 +155,12 @@ public class Message {
 		return result;
 		}
 
-	int sendTurn;
-	boolean sign;
+	public int sendTurn;
+	public boolean sign;
 	private int recvTurn;
 	public int messageType;
 	private byte[] data;
-	int id;
+	public int id;
 
 	public Message(int sendTurn, boolean sign, int id) {
 		this.sendTurn = sendTurn;
@@ -146,9 +209,8 @@ public class Message {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+		
 	}
-
 	public static void sendOfferHelpResp(OutputStream out, int tlx, int tly,
 			int width, int height, int globalWidth, int globalHeight,
 			int sendertlx, int sendertly, int senderw, int senderh) {
@@ -169,19 +231,19 @@ public class Message {
 			e.printStackTrace();
 		}
 	}
-
+	
 	public static OfferHelpResponse recvOfferHelpResp(InputStream in) {
 		OfferHelpResponse r = new OfferHelpResponse();
 		try {
 			// TODO verify message type
+			in.read();
 			DataInputStream dis = new DataInputStream(in);
-			dis.read();
-			r.tlx = dis.readInt();
-			r.tly = dis.readInt();
-			r.width = dis.readInt();
-			r.height = dis.readInt();
-			r.globalWidth = dis.readInt();
-			r.globalHeight = dis.readInt();
+			r.setTlx(dis.readInt());
+			r.setTly(dis.readInt());
+			r.setWidth(dis.readInt());
+			r.setHeight(dis.readInt());
+			r.setGlobalWidth(dis.readInt());
+			r.setGlobalHeight(dis.readInt());
 			r.sendertlx = dis.readInt();
 			r.sendertly = dis.readInt();
 			r.senderw = dis.readInt();
@@ -235,9 +297,9 @@ public class Message {
 			result = new ReceivedAgent();
 			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(
 					data));
-			result.x = dis.readInt();
-			result.y = dis.readInt();
-			result.agent = (Agent) Agent.read(dis);
+			result.setX(dis.readInt());
+			result.setY(dis.readInt());
+			result.setAgent(Agent.read(dis));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

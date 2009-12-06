@@ -1,3 +1,5 @@
+package engine;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,7 +9,6 @@ import java.io.DataOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -15,9 +16,17 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.Stack;
 import java.nio.channels.SocketChannel;
+import net.Message;
+import net.Message.OfferHelpResponse;
+import net.Message.ReceivedAgent;
+import ui.CellGrid;
+import world.Agent;
+import world.Cell;
+import world.LocalCell;
+import world.impl.Rabbit;
 
 public class LocalEngine extends Engine {
-
+	
 	LocalCell[][] cells;
 	ArrayList<RemoteEngine> peerList;
 	int globalWidth;
@@ -107,7 +116,7 @@ public class LocalEngine extends Engine {
 		
 		this.turn = turn;
 	}
-
+	
 	public void go() {
 
 		while (turn < 50) {
@@ -150,22 +159,23 @@ public class LocalEngine extends Engine {
 			System.out.println("Ending turn " + turn);
 		}
 	}
-
+	
 	public void moveAgent(Agent agent, LocalCell oldCell, int x, int y) {
-		Cell newCell = findCell(oldCell.x + x, oldCell.y + y);
+		Cell newCell = findCell(oldCell.getX() + x, oldCell.getY() + y);
 		newCell.add(agent);
 		oldCell.remove(agent);
 	}
-
+	
 	private Cell findRemoteCell(int x, int y) {
 		for (int i = 0; i < peerList.size(); i++) {
-			if (peerList.get(i).hasCell(x, y))
+			if (peerList.get(i).hasCell(x, y)) {
 				return peerList.get(i).findCell(x, y);
+			}
 		}
 		System.err.println("Didn't find remote cell: " + x + ", " + y);
 		return null;
 	}
-
+	
 	@Override
 	public Cell findCell(int x, int y) {
 		if (y >= globalHeight) {
@@ -190,24 +200,24 @@ public class LocalEngine extends Engine {
 	public LocalCell getCell(int x, int y) {
 		return cells[y - tly][x - tlx];
 	}
-
+	
 	public void placeAgent(int x, int y, Agent agent) {
 		LocalCell cell = getCell(x, y);
 		cell.add(agent);
 	}
-
+	
 	public void placeAgents(int agents) {
 		for (int i = 0; i < agents; i++) {
 			LocalCell cell = getCell(0, i);
 			cell.add(new Rabbit());
 		}
 	}
-
+	
 	public void print() {
 		for (int i = 0; i < height; i++) {
 			for (int j = 0; j < width; j++) {
 				LocalCell cell = cells[i][j];
-				if (cell.agents.size() > 0) {
+				if (cell.getAgents().size() > 0) {
 					System.out.print("* ");
 					gui.setColor(j, i, CellGrid.agent1);
 				} else {
@@ -240,9 +250,7 @@ public class LocalEngine extends Engine {
 				case Message.SENDAGENT:
 
 					ReceivedAgent newAgent = message.recvAgent();
-					System.out.println("Received: (" + newAgent.x + ","
-							+ newAgent.y + ")");
-					this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
+					this.placeAgent(newAgent.getX(), newAgent.getY(), newAgent.getAgent());
 					this.processedMessages.add(message);
 					break;
 				case Message.ENDTURN:
@@ -268,7 +276,7 @@ public class LocalEngine extends Engine {
 				LocalCell cell = getCell(i, j);
 				for (Agent a : cell.agents) {
 					Message message = new Message(this.turn, true, -1);
-					message.sendAgent(remote.out, cell.x, cell.y, a);
+					message.sendAgent(remote.out, cell.getX(), cell.getY(), a);
 				}
 			}
 		}
@@ -290,14 +298,14 @@ public class LocalEngine extends Engine {
 	}
 
 	public static void main(String[] args) {
-
+		
 		int globalWidth = 10;
 		int globalHeight = 10;
 		int port = 1234;
 		LocalEngine engine = null;
 		boolean isClient = false;
 		try {
-
+			
 			// Client case
 			if (args.length == 1) {
 				isClient = true;
@@ -308,13 +316,12 @@ public class LocalEngine extends Engine {
 				RemoteEngine server = new RemoteEngine(socket, 0);
 				Message.sendOfferHelpReq(server.out);
 				OfferHelpResponse r = Message.recvOfferHelpResp(server.in);
-				engine = new LocalEngine(r.tlx, r.tly, r.width, r.height,
-						r.globalWidth, r.globalHeight);
+				engine = new LocalEngine(r.getTlx(), r.getTly(), r.getWidth(),
+						r.getHeight(), r.getGlobalWidth(), r.getGlobalHeight());
 				server.setEngine(engine);
 				engine.peerList.add(server);
 				server.setCoordinates(r.sendertlx, r.sendertly, 
 					r.senderw, r.senderh);
-				System.out.printf("%d %d %d %d\n",r.sendertlx,r.sendertly, r.senderw, r.senderh);
 				server.listen();
 				// TODO: Get agents from server.
 			}

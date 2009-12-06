@@ -1,3 +1,4 @@
+package world;
 import java.lang.reflect.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -9,9 +10,9 @@ public abstract class Agent{
 	transient LocalCell cell;
 	int turn = 0;
 	public boolean hasMoved = false;
-
+	
 	public abstract void go();
-
+	
 	/*
 	 * public void look(); public void reproduce(); public void die(); public
 	 * void set(); public void read(); public void send(); public void recv();
@@ -19,13 +20,13 @@ public abstract class Agent{
 	public void move(int x, int y) {
 		cell.move(this, x, y);
 	}
-
+	
 	public void setCell(LocalCell cell) {
 		this.cell = cell;
 	}
-
+	
 	public void start(int turn) {
-		if (!hasMoved ) {
+		if (!hasMoved) {
 			hasMoved = true;
 			this.go();
 		}
@@ -84,5 +85,4 @@ public abstract class Agent{
 		}
 		return (Agent)agent;
 	}
-
 }
