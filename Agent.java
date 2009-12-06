@@ -52,7 +52,6 @@ public abstract class Agent{
 			Class t = f.getType();
 			out.writeUTF(f.getName());
 			String typeName = t.getName();
-			System.out.println(typeName);
 			if(typeName.equals("int")){
 				out.writeInt(f.getInt(this));
 			}
@@ -67,7 +66,6 @@ public abstract class Agent{
 		Agent agent = null;
 		try{
 		String classname = in.readUTF();
-		System.out.println(classname);
 		Class c = Class.forName(classname);
 		agent = (Agent)c.newInstance();
 		agent.turn = in.readInt();

@@ -13,9 +13,11 @@ public class RemoteEngine extends Engine {
 	LocalEngine localEngine;
 	MessageReader reader;
 	Thread readerThread;
+	int id;
 	
-	public RemoteEngine(Socket socket){
+	public RemoteEngine(Socket socket, int id){
 		this.socket = socket;
+		this.id = id;
 		try{
 			this.out = socket.getOutputStream();
 			this.in = socket.getInputStream();
@@ -24,8 +26,8 @@ public class RemoteEngine extends Engine {
 		}
 	}
 	
-	public RemoteEngine(Socket socket, LocalEngine localEngine) {
-		this(socket);
+	public RemoteEngine(Socket socket, LocalEngine localEngine, int id) {
+		this(socket, id);
 		this.localEngine = localEngine;
 	}
 
@@ -50,7 +52,8 @@ public class RemoteEngine extends Engine {
 		// TODO: Send a 'sendAgent' request to the remote machine using
 		// the message protocol.
 		System.out.println("Sending " + newCell.x + "," + newCell.y);
-		Message message = new Message(localEngine.turn, true);
+		Message message = new Message(localEngine.turn, true, id);
 		message.sendAgent(out, newCell.x, newCell.y, agent);
+		localEngine.storeAntimessage(message);
 	}
 }

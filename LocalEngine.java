@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
+import java.util.Random;
 import java.util.Stack;
 import java.nio.channels.SocketChannel;
 
@@ -28,12 +29,17 @@ public class LocalEngine extends Engine {
 	LinkedList<Message> processedMessages;
 	PriorityQueue<Message> sentMessages;
 	CellGrid gui;
+	
+	Random random = new Random();
 
-	public LocalEngine(int tlx, int tly, int width, int height, int globalWidth, int globalHeight) {
+	public LocalEngine(int tlx, int tly, int width, int height,
+			int globalWidth, int globalHeight) {
 		super(tlx, tly, width, height);
 		this.states = new HashMap<Integer, ArrayList<byte[]>>();
-		this.recvdMessages = new PriorityQueue<Message>(8, Message.recvTurnComparator);
-		this.sentMessages = new PriorityQueue<Message>(8, Message.sendTurnComparator);
+		this.recvdMessages = new PriorityQueue<Message>(8,
+				Message.sendTurnComparator);
+		this.sentMessages = new PriorityQueue<Message>(8,
+				Message.reverseSendTurnComparator);
 		this.processedMessages = new LinkedList<Message>();
 		this.globalWidth = globalWidth;
 		this.globalHeight = globalHeight;
@@ -46,81 +52,102 @@ public class LocalEngine extends Engine {
 			}
 		}
 	}
-	
-	private void saveState(){
-		
+
+	private void saveState() {
+
 		ArrayList<byte[]> newState = new ArrayList<byte[]>();
-		for(int i=0; i< height; i++){
-			for(int j=0; j< width; j++){
+		for (int i = 0; i < height; i++) {
+			for (int j = 0; j < width; j++) {
 				LocalCell cell = cells[i][j];
 				newState.add(cell.serialize());
 			}
 		}
 		states.put(turn, newState);
 	}
-	
-	private void rollback(int turn){
-		//TODO: Send off anti-message queue.
+
+	private void rollback(int turn) {
+		System.err.println("Rolling back from turn " + this.turn + " to turn " + turn);
+		// TODO: Send off anti-message queue.
 		rollback = true;
 		ArrayList<byte[]> state = states.get(turn);
-		for( byte[] b : state){
-			//System.err.println("The byte array is of length " + b.length);
+		for (byte[] b : state) {
+			// System.err.println("The byte array is of length " + b.length);
 			ByteArrayInputStream s = new ByteArrayInputStream(b);
 			try {
 				DataInputStream dis = new DataInputStream(s);
 				int x = dis.readInt();
 				int y = dis.readInt();
 				int count = dis.readInt();
-				/*System.err.println(MessageFormat.format(
-						"Rolling back cell ({0}, {1}); {2} agents.", x,
-						y, count));*/
-				LocalCell cell = getCell(x,y);
+				/*
+				 * System.err.println(MessageFormat.format(
+				 * "Rolling back cell ({0}, {1}); {2} agents.", x, y, count));
+				 */
+				LocalCell cell = getCell(x, y);
 				cell.agents.clear();
-				while(count-- != 0){
+				while (count-- != 0) {
 					cell.add(Agent.read(dis));
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
+		
+		// Put rolled-back events back onto the incoming queue
+		for(Message m : processedMessages) {
+			if(m.sendTurn >= turn) {
+				recvdMessages.offer(m);
+			}
+		}
+		
+		// Send antimessages
+		while(!this.sentMessages.isEmpty() && sentMessages.peek().sendTurn >= turn) {
+			Message msg = sentMessages.poll();
+			msg.sendMessage( peerList.get(msg.id).out );
+		}
+		
 		this.turn = turn;
 	}
 
 	public void go() {
-		
-		while(turn < 20){
-			//TODO: Remove this only for testing
-			if(turn == 10){
+
+		while (turn < 50) {
+			// TODO: Remove this only for testing
+			/*
+			if (turn == 10) {
 				rollback(3);
 			}
-			
-			if(!rollback){
+			*/
+
+			if (!rollback) {
 				turn++;
 				saveState();
 			}
+			
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(25);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+			
 			System.out.println("Starting turn " + turn);
-			for(LocalCell[] cell : cells) {
-				for(LocalCell element: cell){
+			for (LocalCell[] cell : cells) {
+				for (LocalCell element : cell) {
 					element.resetAgents();
 				}
 			}
-			
+
 			for (LocalCell[] cell : cells) {
 				for (LocalCell element : cell) {
 					element.go(turn);
 				}
 			}
 			rollback = false;
-			for(int j=0;j<peerList.size();j++){
+			for (int j = 0; j < peerList.size(); j++) {
 				Message.endTurn(peerList.get(j).out, turn);
 			}
 			handleMessages();
 			print();
+			System.out.println("Ending turn " + turn);
 		}
 	}
 
@@ -154,13 +181,13 @@ public class LocalEngine extends Engine {
 			x = (x % globalWidth) + globalWidth;
 		}
 		if (hasCell(x, y)) {
-			return getCell(x ,y);
+			return getCell(x, y);
 		} else {
 			return findRemoteCell(x, y);
 		}
 	}
 
-	public LocalCell getCell(int x, int y){
+	public LocalCell getCell(int x, int y) {
 		return cells[y - tly][x - tlx];
 	}
 
@@ -171,14 +198,14 @@ public class LocalEngine extends Engine {
 
 	public void placeAgents(int agents) {
 		for (int i = 0; i < agents; i++) {
-			LocalCell cell = getCell(0,i);
+			LocalCell cell = getCell(0, i);
 			cell.add(new Rabbit());
 		}
 	}
 
 	public void print() {
-		for(int i=0; i < height; i++){
-			for(int j=0; j < width; j++){
+		for (int i = 0; i < height; i++) {
+			for (int j = 0; j < width; j++) {
 				LocalCell cell = cells[i][j];
 				if (cell.agents.size() > 0) {
 					System.out.print("* ");
@@ -194,57 +221,74 @@ public class LocalEngine extends Engine {
 
 	private void handleMessages() {
 		try {
-			//It is OK to check if recvdMessages is empty without synchronizing,
-			//because this has no effect on the process adding things to it.
+			// It is OK to check if recvdMessages is empty without
+			// synchronizing,
+			// because this has no effect on the process adding things to it.
 			System.out.println("Queue size =" + recvdMessages.size());
-			while(!recvdMessages.isEmpty()){
-			Message message = null;
-			synchronized (recvdMessages) {
-				message = recvdMessages.poll();
-			}
-			switch (message.messageType) {
-			case Message.SENDAGENT:
+			while (!recvdMessages.isEmpty()) {
+				Message message = null;
+				synchronized (recvdMessages) {
+					if (recvdMessages.peek().sendTurn > this.turn) {
+						break;
+					}
+					message = recvdMessages.poll();
+				}
+				if (message.sendTurn < this.turn) {
+					rollback(message.sendTurn);
+				}
+				switch (message.messageType) {
+				case Message.SENDAGENT:
 
-				ReceivedAgent newAgent = message.recvAgent();
-				System.out.println("Received: (" + newAgent.x +"," + newAgent.y +")");
-				this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
-				this.processedMessages.add(message);
-				break;
-			case Message.ENDTURN:
-				break;
-			}
+					ReceivedAgent newAgent = message.recvAgent();
+					System.out.println("Received: (" + newAgent.x + ","
+							+ newAgent.y + ")");
+					this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
+					this.processedMessages.add(message);
+					break;
+				case Message.ENDTURN:
+					break;
+				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
-	private void sendCells(RemoteEngine remote){
-		//TODO:  Send agents along with cells.
+
+	private void sendCells(RemoteEngine remote) {
+		// TODO: Send agents along with cells.
 		int rWidth = this.width / 2;
 		int rHeight = this.height;
 		int rTlx = this.width - rWidth;
 		int rTly = 0;
-		Message.sendOfferHelpResp(remote.out, rTlx, rTly, rWidth, rHeight, globalWidth, globalHeight);
-		for(int i= rTlx; i < rWidth; i++){
-			for(int j = rTly; j < rHeight; j++){
+		Message.sendOfferHelpResp(remote.out, rTlx, rTly, rWidth, rHeight,
+				globalWidth, globalHeight);
+		for (int i = rTlx; i < rWidth; i++) {
+			for (int j = rTly; j < rHeight; j++) {
 				LocalCell cell = getCell(i, j);
-				for(Agent a : cell.agents){
-					Message message = new Message(this.turn, true);
+				for (Agent a : cell.agents) {
+					Message message = new Message(this.turn, true, -1);
 					message.sendAgent(remote.out, cell.x, cell.y, a);
 				}
-			}		
+			}
 		}
-		remote.setCoordinates(rTlx,rTly,rWidth,rHeight);
+		remote.setCoordinates(rTlx, rTly, rWidth, rHeight);
 		this.peerList.add(remote);
-		//TODO: Actually change the size of the data structure that
-		//holds the cells.
+		// TODO: Actually change the size of the data structure that
+		// holds the cells.
 		this.width = this.width - rWidth;
 		gui.dispose();
 		gui = new CellGrid(height, width, tlx, tly);
-		
+
 	}
-				
+	
+	public void storeAntimessage(Message message) {
+		message.sign = false;
+		synchronized(sentMessages) {
+			sentMessages.offer(message);
+		}
+
+	}
+
 	public static void main(String[] args) {
 
 		int globalWidth = 10;
@@ -257,38 +301,41 @@ public class LocalEngine extends Engine {
 			// Client case
 			if (args.length == 1) {
 				isClient = true;
-				//Use multicast instead.
+				// Use multicast instead.
 				InetAddress other = InetAddress.getByName(args[0]);
 				Socket socket = new Socket(other, port);
-				RemoteEngine server = new RemoteEngine(socket);
+				//TODO Remove magic number.
+				RemoteEngine server = new RemoteEngine(socket, 0);
 				Message.sendOfferHelpReq(server.out);
 				OfferHelpResponse r = Message.recvOfferHelpResp(server.in);
-				engine = new LocalEngine(r.tlx, r.tly, r.width, r.height, r.globalWidth,
-						r.globalHeight);
+				engine = new LocalEngine(r.tlx, r.tly, r.width, r.height,
+						r.globalWidth, r.globalHeight);
 				server.setEngine(engine);
 				engine.peerList.add(server);
 				server.setCoordinates(0, 0, 5, 10);
 				server.listen();
-				//TODO: Get agents from server.
+				// TODO: Get agents from server.
 			}
 
 			// Server case
 			else {
 				// TODO: Don't hard code everything.
-				engine = new LocalEngine(0, 0, globalWidth, globalHeight, globalWidth, globalHeight);
+				engine = new LocalEngine(0, 0, globalWidth, globalHeight,
+						globalWidth, globalHeight);
 				ServerSocket serverSocket = new ServerSocket(port);
 				Socket clientSocket = serverSocket.accept();
-				RemoteEngine client = new RemoteEngine(clientSocket, engine);
-				//This is to read the offerHelpReq message.  This
-				//should be in a method.
-				if(client.in.read() != Message.OFFERHELP){
+				//TODO Remove magic number.
+				RemoteEngine client = new RemoteEngine(clientSocket, engine, 0);
+				// This is to read the offerHelpReq message. This
+				// should be in a method.
+				if (client.in.read() != Message.OFFERHELP) {
 					throw new Exception("Expected offer help request.");
 				}
 				client.listen();
 				// TODO: Use a smart algorithm to figure out what
 				// coordinates to assign the other node.
 				engine.sendCells(client);
-	
+
 				// We probably need some kind of ACK here.
 
 				engine.placeAgents(10);

@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Comparator;
 
 class OfferHelpResponse {
@@ -28,87 +29,107 @@ class ReceivedAgent {
 	}
 }
 
-
-
 public class Message {
 
 	public static final byte OFFERHELP = 0x1;
 	public static final byte SENDAGENT = 0x2;
 	public static final byte ENDTURN = 0x3;
-	
+
 	public static Comparator<Message> sendTurnComparator = new Comparator<Message>() {
 
 		public int compare(Message o1, Message o2) {
-			if(o1.sendTurn > o2.sendTurn){
+			if (o1.sendTurn > o2.sendTurn) {
 				return 1;
-			}
-			else if(o1.sendTurn < o2.sendTurn){
+			} else if (o1.sendTurn < o2.sendTurn) {
 				return -1;
-			}
-			else{
+			} else {
 				return 0;
 			}
 
 		}
-		
+
 	};
-	
-	public static Comparator<Message> recvTurnComparator = new Comparator<Message>() {
+
+	// This compares things in the opposite order so that messages in the
+	// priority queue will be sorted correctly.
+	public static Comparator<Message> reverseSendTurnComparator = new Comparator<Message>() {
 
 		public int compare(Message o1, Message o2) {
-			if(o1.recvTurn > o2.recvTurn){
-				return 1;
-			}
-			else if(o1.recvTurn < o2.recvTurn){
+			if (o1.sendTurn > o2.sendTurn) {
 				return -1;
-			}
-			else{
+			} else if (o1.sendTurn < o2.sendTurn) {
+				return 1;
+			} else {
 				return 0;
 			}
 
 		}
-		
+
 	};
 
+	public void print() {
+		System.out.println("sendTurn: " + sendTurn + " messageType: " + messageType + " sign: " + sign + " data: " + data);
+	}
 	
-	private int sendTurn;
+	@Override
+	public boolean equals(Object other) {
+		boolean result = false;
+		System.err.println("Message.equals called");
+		if (other instanceof Message) {
+			Message otherMsg = (Message) other;
+			this.print();
+			otherMsg.print();
+			result = ((this.sendTurn == otherMsg.sendTurn)
+					&& (this.messageType == otherMsg.messageType)
+					&& (this.sign != otherMsg.sign) && Arrays.equals(this.data,
+					otherMsg.data));
+		}
+		System.out.println("Result of equals: " + result);
+		return result;
+		}
+
+	int sendTurn;
 	boolean sign;
 	private int recvTurn;
 	public int messageType;
 	private byte[] data;
+	int id;
 
-	public Message(int sendTurn, boolean sign){
+	public Message(int sendTurn, boolean sign, int id) {
 		this.sendTurn = sendTurn;
 		this.sign = sign;
+		this.id = id;
 	}
 
-	public Message(int recvTurn, int messageType){
+	public Message(int recvTurn, int messageType) {
 		this.recvTurn = recvTurn;
 		this.messageType = messageType;
 	}
 
-	private void writeMessage(DataOutputStream dos, byte messageType, int dataSize){
-		try{
+	private void writeMessage(DataOutputStream dos, byte messageType,
+			int dataSize) {
+		try {
 			this.messageType = messageType;
 			dos.writeByte(messageType);
 			dos.writeInt(sendTurn);
 			dos.writeBoolean(sign);
 			dos.writeInt(dataSize);
 			dos.flush();
-		}catch(Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	private int readMessage(InputStream is){
+	private int readMessage(InputStream is) {
 		int dataSize = 0;
-		try{
+		try {
 			DataInputStream dis = new DataInputStream(is);
 			sendTurn = dis.readInt();
 			sign = dis.readBoolean();
 			dataSize = dis.readInt();
-			System.out.println("Read Message: sendTurn =" + sendTurn + " sign " + sign + " dataSize " + dataSize);
-		}catch(Exception e){
+			System.out.println("Read Message: sendTurn =" + sendTurn + " sign "
+					+ sign + " dataSize " + dataSize);
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return dataSize;
@@ -124,8 +145,8 @@ public class Message {
 
 	}
 
-	public static void sendOfferHelpResp(OutputStream out, int tlx, int tly, int width, int height,
-			int globalWidth, int globalHeight) {
+	public static void sendOfferHelpResp(OutputStream out, int tlx, int tly,
+			int width, int height, int globalWidth, int globalHeight) {
 		try {
 			ByteBuffer data = ByteBuffer.allocate(25);
 			data.put(OFFERHELP);
@@ -160,11 +181,23 @@ public class Message {
 		return r;
 	}
 
+	public void sendMessage(OutputStream out) {
+		DataOutputStream dos = new DataOutputStream(out);
+		writeMessage(dos, (byte) this.messageType, data.length);
+		try {
+			dos.write(data, 0, data.length);
+			dos.flush();
+			out.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	/*
 	 * sendAgent: +Request: requestType (1 byte) X (4 bytes) Y (4 bytes)
 	 * Agent(serialized) (? bytes)
 	 */
-	public void sendAgent(OutputStream out, int x, int y, Agent agent){
+	public void sendAgent(OutputStream out, int x, int y, Agent agent) {
 		try {
 			DataOutputStream dos = new DataOutputStream(out);
 			byte[] agentBytes = agent.toBytes();
@@ -185,56 +218,57 @@ public class Message {
 		}
 	}
 
-	public ReceivedAgent recvAgent(){
+	public ReceivedAgent recvAgent() {
 		ReceivedAgent result = null;
-		try{
-		result = new ReceivedAgent();
-		DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
-		result.x = dis.readInt();
-		result.y = dis.readInt();
-		result.agent = (Agent) Agent.read(dis);
-		}catch(Exception e){
+		try {
+			result = new ReceivedAgent();
+			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(
+					data));
+			result.x = dis.readInt();
+			result.y = dis.readInt();
+			result.agent = (Agent) Agent.read(dis);
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return result;
 	}
-	
+
 	public void recvAgent(InputStream in) {
-		
+
 		try {
 			int dataSize = readMessage(in);
 			System.out.println("size:" + dataSize);
 			data = new byte[dataSize];
 			int bytesRead = 0;
-			do{
+			do {
 				bytesRead += in.read(data, bytesRead, dataSize - bytesRead);
 				System.out.println("Read " + bytesRead + " of " + dataSize);
-			}while(bytesRead < dataSize);
+			} while (bytesRead < dataSize);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	public static void endTurn(OutputStream out, int turn){
-		try{
+	public static void endTurn(OutputStream out, int turn) {
+		try {
 			ByteBuffer data = ByteBuffer.allocate(5);
 			data.put(ENDTURN);
 			data.putInt(turn);
 			out.write(data.array());
 			out.flush();
-		} catch (Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static int endTurn(InputStream in){
+	public static int endTurn(InputStream in) {
 		int turn = -1;
-		try{
+		try {
 			DataInputStream dis = new DataInputStream(in);
-			//TODO: Check message type.
+			// TODO: Check message type.
 			turn = dis.readInt();
-		}catch(Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return turn;

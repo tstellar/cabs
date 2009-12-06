@@ -10,7 +10,6 @@ public class MessageReader implements Runnable{
 	private LocalEngine engine;
 
 	public MessageReader(LocalEngine engine, InputStream in){
-		
 		this.engine = engine;
 		this.recvdMessages = engine.recvdMessages;
 		this.in = in;
@@ -24,8 +23,12 @@ public class MessageReader implements Runnable{
 				case Message.SENDAGENT:
 					Message message = new Message(engine.turn, messageType);
 					message.recvAgent(in);
-					synchronized (recvdMessages) {
-						recvdMessages.add(message);
+					synchronized (recvdMessages) {						
+						if(!recvdMessages.remove(message)) {
+							recvdMessages.add(message);
+						} else {
+							System.err.println("Message and antimessage annihilated");
+						}
 					}
 					break;
 				case Message.ENDTURN:
