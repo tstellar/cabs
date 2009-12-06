@@ -15,17 +15,65 @@ import world.Agent;
 public class Message {
 
 	public static class OfferHelpResponse {
-		public int tlx;
-		public int tly;
-		public int width;
-		public int height;
-		public int globalWidth;
-		public int globalHeight;
+
+		private int tlx;
+		private int tly;
+		private int width;
+		private int height;
+		private int globalWidth;
+		private int globalHeight;
 		public int sendertlx;
 		public int sendertly;
 		public int senderw;
 		public int senderh;
 
+		public void setTlx(int tlx) {
+			this.tlx = tlx;
+		}
+
+		public int getTlx() {
+			return tlx;
+		}
+
+		public void setTly(int tly) {
+			this.tly = tly;
+		}
+
+		public int getTly() {
+			return tly;
+		}
+
+		public void setWidth(int width) {
+			this.width = width;
+		}
+
+		public int getWidth() {
+			return width;
+		}
+
+		public void setHeight(int height) {
+			this.height = height;
+		}
+
+		public int getHeight() {
+			return height;
+		}
+
+		public void setGlobalWidth(int globalWidth) {
+			this.globalWidth = globalWidth;
+		}
+
+		public int getGlobalWidth() {
+			return globalWidth;
+		}
+
+		public void setGlobalHeight(int globalHeight) {
+			this.globalHeight = globalHeight;
+		}
+
+		public int getGlobalHeight() {
+			return globalHeight;
+		}
 	}
 
 	public static class ReceivedAgent {
@@ -230,7 +278,6 @@ public class Message {
 			result.x = dis.readInt();
 			result.y = dis.readInt();
 			result.agent = Agent.read(dis);
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

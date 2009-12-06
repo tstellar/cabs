@@ -29,7 +29,6 @@ public class LocalEngine extends Engine {
 	public int turn = 0;
 	boolean rollback = false;
 	HashMap<Integer, ArrayList<byte[]>> states;
-
 	public PriorityQueue<Message> recvdMessages;
 	LinkedList<Message> processedMessages;
 	PriorityQueue<Message> sentMessages;
@@ -85,6 +84,7 @@ public class LocalEngine extends Engine {
 				 * "Rolling back cell ({0}, {1}); {2} agents.", x, y, count));
 				 */
 				LocalCell cell = getCell(x, y);
+
 				cell.agents.clear();
 				while (count-- != 0) {
 					cell.add(Agent.read(dis));
@@ -258,6 +258,7 @@ public class LocalEngine extends Engine {
 		int rHeight = this.height;
 		int rTlx = this.width - rWidth;
 		int rTly = 0;
+
 		this.width = this.width - rWidth;
 		Message.sendOfferHelpResp(remote.out, rTlx, rTly, rWidth, rHeight, globalWidth,
 				globalHeight, tlx, tly, width, height);
@@ -266,7 +267,7 @@ public class LocalEngine extends Engine {
 				LocalCell cell = getCell(i, j);
 				for (Agent a : cell.agents) {
 					Message message = new Message(this.turn, true, -1);
-					message.sendAgent(remote.out, cell.x, cell.y, a);
+
 					message.sendAgent(remote.out, cell.getX(), cell.getY(), a);
 				}
 			}
@@ -307,12 +308,11 @@ public class LocalEngine extends Engine {
 				RemoteEngine server = new RemoteEngine(socket, 0);
 				Message.sendOfferHelpReq(server.out);
 				OfferHelpResponse r = Message.recvOfferHelpResp(server.in);
-				engine = new LocalEngine(r.tlx, r.tly, r.width, r.height, r.globalWidth,
-						r.globalHeight);
+				engine = new LocalEngine(r.getTlx(), r.getTly(), r.getWidth(), r.getHeight(), r
+						.getGlobalWidth(), r.getGlobalHeight());
 				server.setEngine(engine);
 				engine.peerList.add(server);
 				server.setCoordinates(r.sendertlx, r.sendertly, r.senderw, r.senderh);
-				System.out.printf("%d %d %d %d\n", r.sendertlx, r.sendertly, r.senderw, r.senderh);
 				server.listen();
 				// TODO: Get agents from server.
 			}

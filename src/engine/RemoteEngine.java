@@ -25,6 +25,7 @@ public class RemoteEngine extends Engine {
 		try {
 			this.out = socket.getOutputStream();
 			this.in = socket.getInputStream();
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
