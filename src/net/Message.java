@@ -1,10 +1,10 @@
 package net;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -13,7 +13,7 @@ import java.util.Comparator;
 import world.Agent;
 
 public class Message {
-	
+
 	public static class OfferHelpResponse {
 		private int tlx;
 		private int tly;
@@ -62,42 +62,13 @@ public class Message {
 			return globalHeight;
 		}
 	}
-	
+
 	public static class ReceivedAgent {
-		private int x;
-		private int y;
-		private Agent agent;
-		
-		@Override
-		public String toString() {
-			return getX() + ", " + getY() + getAgent().toString();
-		}
-
-		public void setX(int x) {
-			this.x = x;
-		}
-
-		public int getX() {
-			return x;
-		}
-
-		public void setY(int y) {
-			this.y = y;
-		}
-
-		public int getY() {
-			return y;
-		}
-
-		public void setAgent(Agent agent) {
-			this.agent = agent;
-		}
-
-		public Agent getAgent() {
-			return agent;
-		}
+		public int x;
+		public int y;
+		public Agent agent;
 	}
-	
+
 	public static final byte OFFERHELP = 0x1;
 	public static final byte SENDAGENT = 0x2;
 	public static final byte ENDTURN = 0x3;
@@ -105,13 +76,12 @@ public class Message {
 	public static Comparator<Message> sendTurnComparator = new Comparator<Message>() {
 
 		public int compare(Message o1, Message o2) {
-			if (o1.sendTurn > o2.sendTurn) {
+			if (o1.sendTurn > o2.sendTurn)
 				return 1;
-			} else if (o1.sendTurn < o2.sendTurn) {
+			else if (o1.sendTurn < o2.sendTurn)
 				return -1;
-			} else {
+			else
 				return 0;
-			}
 
 		}
 
@@ -122,34 +92,33 @@ public class Message {
 	public static Comparator<Message> reverseSendTurnComparator = new Comparator<Message>() {
 
 		public int compare(Message o1, Message o2) {
-			if (o1.sendTurn > o2.sendTurn) {
+			if (o1.sendTurn > o2.sendTurn)
 				return -1;
-			} else if (o1.sendTurn < o2.sendTurn) {
+			else if (o1.sendTurn < o2.sendTurn)
 				return 1;
-			} else {
+			else
 				return 0;
-			}
 
 		}
 
 	};
 
 	public void print() {
-		System.out.println("sendTurn: " + sendTurn + " messageType: " + messageType + " sign: " + sign + " data: " + data);
+		System.out.println("sendTurn: " + sendTurn + " messageType: " + messageType + " sign: "
+				+ sign + " data: " + data);
 	}
-	
+
 	@Override
 	public boolean equals(Object other) {
 		boolean result = false;
 		if (other instanceof Message) {
 			Message otherMsg = (Message) other;
 			result = ((this.sendTurn == otherMsg.sendTurn)
-					&& (this.messageType == otherMsg.messageType)
-					&& (this.sign != otherMsg.sign) && Arrays.equals(this.data,
-					otherMsg.data));
+					&& (this.messageType == otherMsg.messageType) && (this.sign != otherMsg.sign) && Arrays
+					.equals(this.data, otherMsg.data));
 		}
 		return result;
-		}
+	}
 
 	public int sendTurn;
 	public boolean sign;
@@ -169,8 +138,7 @@ public class Message {
 		this.messageType = messageType;
 	}
 
-	private void writeMessage(DataOutputStream dos, byte messageType,
-			int dataSize) {
+	private void writeMessage(DataOutputStream dos, byte messageType, int dataSize) {
 		try {
 			this.messageType = messageType;
 			dos.writeByte(messageType);
@@ -194,6 +162,7 @@ public class Message {
 					+ sign + " dataSize " + dataSize);
 		} catch (Exception e) {
 			e.printStackTrace();
+			return -1;
 		}
 		return dataSize;
 	}
@@ -205,7 +174,7 @@ public class Message {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 	}
 	public static void sendOfferHelpResp(OutputStream out, int tlx, int tly,
 			int width, int height, int globalWidth, int globalHeight,
@@ -227,7 +196,7 @@ public class Message {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static OfferHelpResponse recvOfferHelpResp(InputStream in) {
 		OfferHelpResponse r = new OfferHelpResponse();
 		try {
@@ -293,9 +262,9 @@ public class Message {
 			result = new ReceivedAgent();
 			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(
 					data));
-			result.setX(dis.readInt());
-			result.setY(dis.readInt());
-			result.setAgent(Agent.read(dis));
+			result.x = dis.readInt();
+			result.y = dis.readInt();
+			result.agent = Agent.read(dis);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -6,12 +6,13 @@ import java.io.OutputStream;
 import java.io.DataOutputStream;
 import java.io.DataInputStream;
 import net.Message;
+import net.MessageReader;
 import world.Agent;
 import world.Cell;
 import world.RemoteCell;
 
 public class RemoteEngine extends Engine {
-	
+
 	Socket socket;
 	InputStream in;
 	OutputStream out;
@@ -19,28 +20,28 @@ public class RemoteEngine extends Engine {
 	MessageReader reader;
 	Thread readerThread;
 	int id;
-	
-	public RemoteEngine(Socket socket, int id){
+
+	public RemoteEngine(Socket socket, int id) {
 		this.socket = socket;
 		this.id = id;
-		try{
+		try {
 			this.out = socket.getOutputStream();
 			this.in = socket.getInputStream();
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 	}
-	
+
 	public RemoteEngine(Socket socket, LocalEngine localEngine, int id) {
 		this(socket, id);
 		this.localEngine = localEngine;
 	}
-	
+
 	public void setEngine(LocalEngine engine) {
 		this.localEngine = engine;
 	}
-	
-	public void listen(){
+
+	public void listen() {
 		reader = new MessageReader(localEngine, in);
 		readerThread = new Thread(reader);
 		readerThread.start();
@@ -52,7 +53,7 @@ public class RemoteEngine extends Engine {
 		// the message protocol.
 		return new RemoteCell(x, y, this);
 	}
-	
+
 	public void sendAgent(RemoteCell newCell, Agent agent) {
 		// TODO: Send a 'sendAgent' request to the remote machine using
 		// the message protocol.
