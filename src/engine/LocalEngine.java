@@ -117,42 +117,40 @@ public class LocalEngine extends Engine {
 
 	public void go() {
 
-		while (turn < 50) {
-			// TODO: Remove this only for testing
-			/*
-			 * if (turn == 10) { rollback(3); }
-			 */
+		while(true){
+			while(turn < 50) {
+				if (!rollback) {
+					turn++;
+					saveState();
+				}
 
-			if (!rollback) {
-				turn++;
-				saveState();
-			}
-
-			try {
+/*			try {
 				Thread.sleep(25);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-
-			System.out.println("Starting turn " + turn);
-			for (LocalCell[] cell : cells) {
-				for (LocalCell element : cell) {
-					element.resetAgents();
+*/
+				System.out.println("Starting turn " + turn);
+				for (LocalCell[] cell : cells) {
+					for (LocalCell element : cell) {
+						element.resetAgents();
+					}
 				}
-			}
 
-			for (LocalCell[] cell : cells) {
-				for (LocalCell element : cell) {
-					element.go(turn);
+				for (LocalCell[] cell : cells) {
+					for (LocalCell element : cell) {
+						element.go(turn);
+					}
 				}
-			}
-			rollback = false;
-			for (int j = 0; j < peerList.size(); j++) {
-				Message.endTurn(peerList.get(j).out, turn);
+				rollback = false;
+				for (int j = 0; j < peerList.size(); j++) {
+					Message.endTurn(peerList.get(j).out, turn);
+				}
+				handleMessages();
+				System.out.println("At the end of turn  " + turn + " the grid is:");
+				print();
 			}
 			handleMessages();
-			print();
-			System.out.println("Ending turn " + turn);
 		}
 	}
 
@@ -229,17 +227,25 @@ public class LocalEngine extends Engine {
 			// It is OK to check if recvdMessages is empty without
 			// synchronizing,
 			// because this has no effect on the process adding things to it.
-			System.out.println("Queue size =" + recvdMessages.size());
+//			System.out.println("Queue size =" + recvdMessages.size());
 			while (!recvdMessages.isEmpty()) {
 				Message message = null;
+				Boolean needRollback = false;
 				synchronized (recvdMessages) {
-					if (recvdMessages.peek().sendTurn > this.turn) {
+					message = recvdMessages.peek();
+					if (message.sendTurn > this.turn) {
 						break;
 					}
-					message = recvdMessages.poll();
+					if (message.sendTurn < this.turn) {
+						needRollback = true;
+					}
+					else{
+						message = recvdMessages.poll();
+					}
 				}
-				if (message.sendTurn < this.turn) {
+				if(needRollback){
 					rollback(message.sendTurn);
+					return;
 				}
 				switch (message.messageType) {
 				case Message.SENDAGENT:
