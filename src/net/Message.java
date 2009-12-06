@@ -25,6 +25,7 @@ public class Message {
 		public int sendertly;
 		public int senderw;
 		public int senderh;
+
 	}
 
 	public static class ReceivedAgent {
@@ -75,16 +76,12 @@ public class Message {
 	@Override
 	public boolean equals(Object other) {
 		boolean result = false;
-		System.err.println("Message.equals called");
 		if (other instanceof Message) {
 			Message otherMsg = (Message) other;
-			this.print();
-			otherMsg.print();
 			result = ((this.sendTurn == otherMsg.sendTurn)
 					&& (this.messageType == otherMsg.messageType) && (this.sign != otherMsg.sign) && Arrays
 					.equals(this.data, otherMsg.data));
 		}
-		System.out.println("Result of equals: " + result);
 		return result;
 	}
 
@@ -170,14 +167,14 @@ public class Message {
 		OfferHelpResponse r = new OfferHelpResponse();
 		try {
 			// TODO verify message type
+			in.read();
 			DataInputStream dis = new DataInputStream(in);
-			dis.read();
-			r.tlx = dis.readInt();
-			r.tly = dis.readInt();
-			r.width = dis.readInt();
-			r.height = dis.readInt();
-			r.globalWidth = dis.readInt();
-			r.globalHeight = dis.readInt();
+			r.tlx = (dis.readInt());
+			r.tly = (dis.readInt());
+			r.width = (dis.readInt());
+			r.height = (dis.readInt());
+			r.globalWidth = (dis.readInt());
+			r.globalHeight = (dis.readInt());
 			r.sendertlx = dis.readInt();
 			r.sendertly = dis.readInt();
 			r.senderw = dis.readInt();
@@ -233,6 +230,7 @@ public class Message {
 			result.x = dis.readInt();
 			result.y = dis.readInt();
 			result.agent = Agent.read(dis);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -254,7 +252,6 @@ public class Message {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 	}
 
 	public static void endTurn(OutputStream out, int turn) {

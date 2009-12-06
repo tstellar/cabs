@@ -87,5 +87,4 @@ public abstract class Agent {
 		}
 		return agent;
 	}
-
 }

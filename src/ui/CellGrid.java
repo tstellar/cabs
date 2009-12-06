@@ -17,26 +17,26 @@ public class CellGrid extends JFrame {
 	public static final Color agent2 = Color.yellow;
 	public static final Color mixed = Color.green;
 	ArrayList<ArrayList<myJCanvas>> myList;
-	
+
 	// Takes the number of x and y cells (width and height) and makes the grid
 	public CellGrid(int rows, int cols, int tlx, int tly) {
-		
+
 		// int xCellSize = WINDOW_WIDTH/(xCells+1); //gridlayout auto-resizes
 		// int yCellSize = WINDOW_HEIGHT/(yCells+1);
 		// int xCellSize = 65;
 		// int yCellSize = 65;
-		
+
 		GridLayout layout1 = new GridLayout(rows, cols, 5, 5); // sets the width
-																// and height
+		// and height
 		this.setLayout(layout1); // adds the layout we just made
 		this.setBackground(Color.black); // sets the background black
 		setTitle("CABS - " + tlx + "," + tly + " " + rows + "x" + cols); // sets
-																			// the
-																			// title
+		// the
+		// title
 		// setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
 		LineBorder bord1 = new LineBorder(Color.black, 5); // border because it
-															// looked funny
-															// before
+		// looked funny
+		// before
 		// this.setBorder(bord1); //adds the border
 		// JScrollPane scroller = new JScrollPane(panel1); //makes a scroll pane
 		// from the panel
@@ -44,26 +44,26 @@ public class CellGrid extends JFrame {
 		pack();
 		myList = // array list of array lists
 		new ArrayList<ArrayList<myJCanvas>>();
-		
+
 		setSize(500, 500);
-		
+
 		// for(int i=0;i<rows;i++) //add the second set of array lists to the
 		// first
 		// myList.add(new ArrayList<myJCanvas>());
 		for (int x = 0; x < rows; x++) {
 			myList.add(new ArrayList<myJCanvas>());
 			for (int y = 0; y < cols; y++) { // steps through the lists and
-												// makes canvases
+				// makes canvases
 				myList.get(x).add(new myJCanvas());
 				this.add(myList.get(x).get(y)); // adds the canvases to the
-												// panel
+				// panel
 			}
 		}
 		setVisible(true); // make the JFrame visible
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
+
 	}
-	
+
 	/*
 	 * public void draw(LocalCell[][] cell){ for (int i = 0; i < cell.x; i++) {
 	 * for (int j = 0; j < this.width; j++) { cells[i][j] = new LocalCell(tlx +
@@ -73,7 +73,7 @@ public class CellGrid extends JFrame {
 		// myList.get(yPos-tly).get(xPos-tlx).setBackground(color);
 		myList.get(yPos).get(xPos).setBackground(color);
 	}
-	
+
 	// could extend anything that's Swing (not awt)
 	// All this does at the moment is make a "cell" with a changeable color.
 	// This could potentially be something that held text like 4r,3g = 4
@@ -81,20 +81,20 @@ public class CellGrid extends JFrame {
 	public class myJCanvas extends JPanel {
 		public myJCanvas(int tempWidth, int tempHeight) {
 			this.setSize(tempWidth, tempHeight); // sizes that do nothing
-													// because of GridLayout
+			// because of GridLayout
 			this.setBackground(empty); // empty cell color
 			this.setMaximumSize(new Dimension(25, 25)); // doesn't matter
-														// because of GridLayout
+			// because of GridLayout
 			this.setMinimumSize(new Dimension(60, 60));
 			this.setPreferredSize(new Dimension(60, 60));
 		}
-		
+
 		public myJCanvas() {
 			this.setSize(30, 30);
 			this.setBackground(Color.blue);
 		}
 	}
-	
+
 	// Just for demonstration/debug
 	/*
 	 * public static void main(String[] args) throws InterruptedException { int

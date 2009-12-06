@@ -85,7 +85,6 @@ public class LocalEngine extends Engine {
 				 * "Rolling back cell ({0}, {1}); {2} agents.", x, y, count));
 				 */
 				LocalCell cell = getCell(x, y);
-
 				cell.agents.clear();
 				while (count-- != 0) {
 					cell.add(Agent.read(dis));
@@ -241,7 +240,6 @@ public class LocalEngine extends Engine {
 				case Message.SENDAGENT:
 
 					ReceivedAgent newAgent = message.recvAgent();
-					System.out.println("Received: (" + newAgent.x + "," + newAgent.y + ")");
 					this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
 					this.processedMessages.add(message);
 					break;
@@ -260,7 +258,6 @@ public class LocalEngine extends Engine {
 		int rHeight = this.height;
 		int rTlx = this.width - rWidth;
 		int rTly = 0;
-
 		this.width = this.width - rWidth;
 		Message.sendOfferHelpResp(remote.out, rTlx, rTly, rWidth, rHeight, globalWidth,
 				globalHeight, tlx, tly, width, height);
@@ -270,6 +267,7 @@ public class LocalEngine extends Engine {
 				for (Agent a : cell.agents) {
 					Message message = new Message(this.turn, true, -1);
 					message.sendAgent(remote.out, cell.x, cell.y, a);
+					message.sendAgent(remote.out, cell.getX(), cell.getY(), a);
 				}
 			}
 		}
@@ -277,7 +275,6 @@ public class LocalEngine extends Engine {
 		this.peerList.add(remote);
 		// TODO: Actually change the size of the data structure that
 		// holds the cells.
-
 		gui.dispose();
 		gui = new CellGrid(height, width, tlx, tly);
 

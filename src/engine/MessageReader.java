@@ -1,9 +1,9 @@
-package net;
+package engine;
 
 import java.io.InputStream;
 import java.util.PriorityQueue;
 
-import engine.LocalEngine;
+import net.Message;
 
 public class MessageReader implements Runnable {
 

@@ -51,7 +51,6 @@ public class LocalCell extends Cell {
 		ByteArrayOutputStream s = new ByteArrayOutputStream();
 		DataOutputStream dos;
 		try {
-
 			dos = new DataOutputStream(s);
 			dos.writeInt(x);
 			dos.writeInt(y);
