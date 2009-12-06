@@ -74,6 +74,7 @@ public class Message {
 	private int sendTurn;
 	boolean sign;
 	private int recvTurn;
+	public int messageType;
 	private byte[] data;
 
 	public Message(int sendTurn, boolean sign){
@@ -81,12 +82,14 @@ public class Message {
 		this.sign = sign;
 	}
 
-	public Message(int recvTurn){
+	public Message(int recvTurn, int messageType){
 		this.recvTurn = recvTurn;
+		this.messageType = messageType;
 	}
 
 	private void writeMessage(DataOutputStream dos, byte messageType, int dataSize){
 		try{
+			this.messageType = messageType;
 			dos.writeByte(messageType);
 			dos.writeInt(sendTurn);
 			dos.writeBoolean(sign);
@@ -164,13 +167,15 @@ public class Message {
 	public void sendAgent(OutputStream out, int x, int y, Agent agent){
 		try {
 			DataOutputStream dos = new DataOutputStream(out);
-			byte[] bytes = agent.toBytes();
-			System.out.write(bytes);
-			System.out.println();
-			int messageSize = bytes.length + 4 + 4;
+			byte[] agentBytes = agent.toBytes();
+			int messageSize = agentBytes.length + 4 + 4;
+			ByteBuffer buffer = ByteBuffer.allocate(messageSize);
 			writeMessage(dos, SENDAGENT, messageSize);
-			dos.writeInt(x);
-			dos.writeInt(y);
+			buffer.putInt(x);
+			buffer.putInt(y);
+			buffer.put(agentBytes);
+			byte[] bytes = buffer.array();
+			this.data = bytes;
 			dos.write(bytes, 0, bytes.length);
 			dos.flush();
 			out.flush();
@@ -180,31 +185,35 @@ public class Message {
 		}
 	}
 
-	public ReceivedAgent recvAgent(InputStream in) {
+	public ReceivedAgent recvAgent(){
 		ReceivedAgent result = null;
-
+		try{
+		result = new ReceivedAgent();
+		DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
+		result.x = dis.readInt();
+		result.y = dis.readInt();
+		result.agent = (Agent) Agent.read(dis);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+	public void recvAgent(InputStream in) {
+		
 		try {
 			int dataSize = readMessage(in);
 			System.out.println("size:" + dataSize);
-			byte[] data = new byte[dataSize];
+			data = new byte[dataSize];
 			int bytesRead = 0;
 			do{
 				bytesRead += in.read(data, bytesRead, dataSize - bytesRead);
 				System.out.println("Read " + bytesRead + " of " + dataSize);
 			}while(bytesRead < dataSize);
-			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
-			result = new ReceivedAgent();
-			result.x = dis.readInt();
-			result.y = dis.readInt();
-			result.agent = (Agent) Agent.read(dis);
-			this.data = data;
-
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		return result;
 	}
 
 	public static void endTurn(OutputStream out, int turn){

@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Stack;
 import java.nio.channels.SocketChannel;
@@ -24,14 +25,16 @@ public class LocalEngine extends Engine {
 	boolean rollback = false;
 	HashMap<Integer, ArrayList<byte[]>> states;
 	PriorityQueue<Message> recvdMessages;
+	LinkedList<Message> processedMessages;
 	PriorityQueue<Message> sentMessages;
 	CellGrid gui;
 
 	public LocalEngine(int tlx, int tly, int width, int height, int globalWidth, int globalHeight) {
 		super(tlx, tly, width, height);
 		this.states = new HashMap<Integer, ArrayList<byte[]>>();
-		this.recvdMessages = new PriorityQueue<Message>();
-		this.sentMessages = new PriorityQueue<Message>();
+		this.recvdMessages = new PriorityQueue<Message>(8, Message.recvTurnComparator);
+		this.sentMessages = new PriorityQueue<Message>(8, Message.sendTurnComparator);
+		this.processedMessages = new LinkedList<Message>();
 		this.globalWidth = globalWidth;
 		this.globalHeight = globalHeight;
 		peerList = new ArrayList<RemoteEngine>();
@@ -189,32 +192,30 @@ public class LocalEngine extends Engine {
 		}
 	}
 
-	private void handleMessages(){
-		for(int i=0; i< peerList.size(); i++){
-			int messageType = 0;
-			try{
-				InputStream in = peerList.get(i).in; 
-				while(messageType != -1){
-					messageType = in.read();
-					switch(messageType){
-					case Message.SENDAGENT:
-						Message message = new Message(this.turn, true);
-						ReceivedAgent newAgent = message.recvAgent(in);
-						System.out.println("Recieved agent at " + newAgent.x + "," + newAgent.y);
-						this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
-						break;
-					case Message.ENDTURN:
-						System.out.println("END OF TURN");
-						int turn = Message.endTurn(in);
-						messageType = -1;
-						break;
-					default:
-						System.out.println("Unknown Message type " + messageType);
-					}
-				}
-			}catch(Exception e){
-				e.printStackTrace();
+	private void handleMessages() {
+		try {
+			//It is OK to check if recvdMessages is empty without synchronizing,
+			//because this has no effect on the process adding things to it.
+			System.out.println("Queue size =" + recvdMessages.size());
+			while(!recvdMessages.isEmpty()){
+			Message message = null;
+			synchronized (recvdMessages) {
+				message = recvdMessages.poll();
 			}
+			switch (message.messageType) {
+			case Message.SENDAGENT:
+
+				ReceivedAgent newAgent = message.recvAgent();
+				System.out.println("Received: (" + newAgent.x +"," + newAgent.y +")");
+				this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
+				this.processedMessages.add(message);
+				break;
+			case Message.ENDTURN:
+				break;
+			}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -267,6 +268,7 @@ public class LocalEngine extends Engine {
 				server.setEngine(engine);
 				engine.peerList.add(server);
 				server.setCoordinates(0, 0, 5, 10);
+				server.listen();
 				//TODO: Get agents from server.
 			}
 
@@ -282,6 +284,7 @@ public class LocalEngine extends Engine {
 				if(client.in.read() != Message.OFFERHELP){
 					throw new Exception("Expected offer help request.");
 				}
+				client.listen();
 				// TODO: Use a smart algorithm to figure out what
 				// coordinates to assign the other node.
 				engine.sendCells(client);

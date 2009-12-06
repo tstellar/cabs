@@ -11,7 +11,9 @@ public class RemoteEngine extends Engine {
 	InputStream in;
 	OutputStream out;
 	LocalEngine localEngine;
-
+	MessageReader reader;
+	Thread readerThread;
+	
 	public RemoteEngine(Socket socket){
 		this.socket = socket;
 		try{
@@ -29,6 +31,12 @@ public class RemoteEngine extends Engine {
 
 	public void setEngine(LocalEngine engine){
 		this.localEngine = engine;
+	}
+	
+	public void listen(){
+		reader = new MessageReader(localEngine, in);
+		readerThread = new Thread(reader);
+		readerThread.start();
 	}
 
 	@Override
