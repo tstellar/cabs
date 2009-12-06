@@ -260,8 +260,9 @@ public class LocalEngine extends Engine {
 		int rHeight = this.height;
 		int rTlx = this.width - rWidth;
 		int rTly = 0;
+		this.width = this.width - rWidth;
 		Message.sendOfferHelpResp(remote.out, rTlx, rTly, rWidth, rHeight,
-				globalWidth, globalHeight);
+			globalWidth, globalHeight, tlx, tly, width, height);
 		for (int i = rTlx; i < rWidth; i++) {
 			for (int j = rTly; j < rHeight; j++) {
 				LocalCell cell = getCell(i, j);
@@ -275,7 +276,6 @@ public class LocalEngine extends Engine {
 		this.peerList.add(remote);
 		// TODO: Actually change the size of the data structure that
 		// holds the cells.
-		this.width = this.width - rWidth;
 		gui.dispose();
 		gui = new CellGrid(height, width, tlx, tly);
 
@@ -312,7 +312,9 @@ public class LocalEngine extends Engine {
 						r.globalWidth, r.globalHeight);
 				server.setEngine(engine);
 				engine.peerList.add(server);
-				server.setCoordinates(0, 0, 5, 10);
+				server.setCoordinates(r.sendertlx, r.sendertly, 
+					r.senderw, r.senderh);
+				System.out.printf("%d %d %d %d\n",r.sendertlx,r.sendertly, r.senderw, r.senderh);
 				server.listen();
 				// TODO: Get agents from server.
 			}

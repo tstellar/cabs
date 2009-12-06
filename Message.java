@@ -16,6 +16,10 @@ class OfferHelpResponse {
 	int height;
 	int globalWidth;
 	int globalHeight;
+	int sendertlx;
+	int sendertly;
+	int senderw;
+	int senderh;
 }
 
 class ReceivedAgent {
@@ -146,18 +150,21 @@ public class Message {
 	}
 
 	public static void sendOfferHelpResp(OutputStream out, int tlx, int tly,
-			int width, int height, int globalWidth, int globalHeight) {
+			int width, int height, int globalWidth, int globalHeight,
+			int sendertlx, int sendertly, int senderw, int senderh) {
 		try {
-			ByteBuffer data = ByteBuffer.allocate(25);
-			data.put(OFFERHELP);
-			data.putInt(tlx);
-			data.putInt(tly);
-			data.putInt(width);
-			data.putInt(height);
-			data.putInt(globalWidth);
-			data.putInt(globalHeight);
-			out.write(data.array());
-			out.flush();
+			DataOutputStream dos = new DataOutputStream(out);
+			dos.write(OFFERHELP);
+			dos.writeInt(tlx);
+			dos.writeInt(tly);
+			dos.writeInt(width);
+			dos.writeInt(height);
+			dos.writeInt(globalWidth);
+			dos.writeInt(globalHeight);
+			dos.writeInt(sendertlx);
+			dos.writeInt(sendertly);
+			dos.writeInt(senderw);
+			dos.writeInt(senderh);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -175,6 +182,10 @@ public class Message {
 			r.height = dis.readInt();
 			r.globalWidth = dis.readInt();
 			r.globalHeight = dis.readInt();
+			r.sendertlx = dis.readInt();
+			r.sendertly = dis.readInt();
+			r.senderw = dis.readInt();
+			r.senderh = dis.readInt();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
