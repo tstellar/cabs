@@ -150,7 +150,7 @@ public class LocalEngine extends Engine {
 	private void fossilCollect() {
 		int minTurn = minLocalTime();
 		for (RemoteEngine re : peerList) {
-			System.out.println("Remote turn is " + re.turn);
+			System.out.println(re.getID() + " Remote turn is " + re.turn);
 			if (re.turn < minTurn) {
 				minTurn = re.turn;
 			}
@@ -192,7 +192,7 @@ public class LocalEngine extends Engine {
 					}
 				}
 				rollback = false;
-				if (turn % 5 == 0) {
+				if (turn % 1 == 0) {
 					for (int j = 0; j < peerList.size(); j++) {
 						System.out.println("ENDTURN to "
 								+ peerList.get(j).getID());
