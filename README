@@ -1,0 +1,17 @@
+MAKE:
+
+You can use ant to build cabs.  Example:
+user@host ~$ ant
+
+You can also use make.  Example:
+user@host ~$ make
+
+RUN:
+If you build with ant you can go into the bin directory and do this:
+user@host ~$ java engine.LocalEngine
+
+If you build with make you can run this from the project root directory:
+user@host ~$ sh run.sh
+
+Both these methods accept the same command line arguments.  Use --help for
+more info.
