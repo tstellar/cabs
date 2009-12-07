@@ -23,7 +23,7 @@ public class MessageReader implements Runnable {
 				int messageType = in.read();
 				switch (messageType) {
 				case Message.SENDAGENT:
-					Message message = new Message(engine.turn, messageType);
+					Message message = new Message(engine.turn, (byte) messageType);
 					message.recvAgent(in);
 					synchronized (recvdMessages) {
 						if (!recvdMessages.remove(message)) {

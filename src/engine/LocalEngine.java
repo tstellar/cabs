@@ -28,6 +28,7 @@ public class LocalEngine extends Engine {
 	ArrayList<RemoteEngine> peerList;
 	int globalWidth;
 	int globalHeight;
+	int stopTurn = 50;
 	public int turn = 0;
 	boolean rollback = false;
 	HashMap<Integer, ArrayList<byte[]>> states;
@@ -160,7 +161,7 @@ public class LocalEngine extends Engine {
 	public void go() {
 
 		while (true) {
-			while (turn < 50) {
+			while (turn < stopTurn) {
 				if (!rollback) {
 					turn++;
 					saveState();
@@ -370,13 +371,66 @@ public class LocalEngine extends Engine {
 		int port = 1234;
 		LocalEngine engine = null;
 		boolean isClient = false;
+		String IP = null;
+		
+		int i=0;
+		String arg;
+		
+		//check for different --types in args[]
+		while(i<args.length && args[i].startsWith("--")){
+			arg = args[i++];	
+			
+			if(arg.equals("--help")){
+				System.out.println("Usage: LocalEngine: [--isClient] IPAddress [--setSize] width height " +
+				"[--port] portNum");
+				System.exit(0);
+			}
+			else if(arg.equals("--isClient")){
+				if(i < args.length){
+					isClient = true;
+					IP = args[i++];	
+				}
+				else{
+					System.err.println("--isClient requires [IP]");
+					System.exit(0);
+				}				
+			}
+			
+			//note: if --setSize is called by the client it probably shouldn't change
+			//the size of it's screen.  Not sure how to handle this with shared code.
+			else if(arg.equals("--setSize")){
+				if((i+1)<args.length){
+					globalWidth = Integer.parseInt(args[i++]);
+					globalHeight = Integer.parseInt(args[i++]);
+				}
+				else{
+					System.err.println("--setSize requres [width height]");
+					System.exit(0);
+				}
+			}
+			//not sure if we even want to include this with the random porting idea
+			else if(arg.equals("--setPort")){
+				if(i < args.length){
+					port = Integer.parseInt(args[i++]);
+				}
+				else{
+					System.out.println("--setPort requires [portNum]");
+					System.exit(0);
+				}
+			}
+			else{
+				System.out.println("Usage: LocalEngine: [--isClient] IPAddress [--setSize] width height " +
+				"[--port] portNum");
+				System.out.println("Default values will be used.");
+				//could just System.exit(0);  if defaults aren't to be used
+			}
+		}
 		try {
 
 			// Client case
-			if (args.length == 1) {
-				isClient = true;
+			if (isClient) {
 				// Use multicast instead.
-				InetAddress other = InetAddress.getByName(args[0]);
+				InetAddress other = InetAddress.getByName(IP);
 				Socket socket = new Socket(other, port);
 				// TODO Remove magic number.
 				RemoteEngine server = new RemoteEngine(socket);
