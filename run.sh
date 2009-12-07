@@ -1,2 +1,2 @@
 cd src
-java engine.LocalEngine $@
+java engine.LocalEngine $@ <&0

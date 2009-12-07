@@ -3,6 +3,7 @@ package engine;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.OutputStream;
+import java.io.File;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.Scanner;
 
 import net.Message;
 import net.Message.LookRequest;
@@ -26,6 +28,7 @@ import world.impl.Rabbit;
 
 public class LocalEngine extends Engine {
 
+	static String PLACEFILE = "engine/agents.txt";
 	LocalCell[][] cells;
 	ArrayList<RemoteEngine> peerList;
 	int globalWidth;
@@ -262,10 +265,29 @@ public class LocalEngine extends Engine {
 		cell.add(agent);
 	}
 
-	public void placeAgents(int agents) {
-		for (int i = 0; i < agents; i++) {
-			LocalCell cell = getCell(0, i);
-			cell.add(new Rabbit());
+	public void placeAgents() {
+		Random x = new Random();
+		Random y = new Random();
+		try{
+			if(System.in.available() == 0){
+				for(int i=0; i< height; i++){
+					placeAgent(0,i,new Rabbit());
+				}
+				return;
+			}
+//			File f = new File(LocalEngine.PLACEFILE);
+			Scanner s = new Scanner(System.in);
+			while(s.hasNext()){
+				String className = s.next();
+				int number = s.nextInt();
+				while(number-- > 0){
+					Class agentClass = Class.forName("world.impl." + className);
+					Object newAgent = agentClass.newInstance();
+					placeAgent(x.nextInt(width), y.nextInt(height),(Agent)newAgent);
+				}
+			}
+		}catch(Exception e){
+			e.printStackTrace();
 		}
 	}
 
@@ -274,7 +296,7 @@ public class LocalEngine extends Engine {
 			for (int j = 0; j < width; j++) {
 				LocalCell cell = cells[i][j];
 				if (cell.getAgents().size() > 0) {
-					System.out.print("* ");
+					System.out.print(cell.getAgents().size() + " ");
 					if(enableGUI){
 						gui.setColor(j, i, CellGrid.agent1);
 					}
@@ -488,7 +510,7 @@ public class LocalEngine extends Engine {
 			else {
 				engine = new LocalEngine(0, 0, globalWidth, globalHeight,
 						globalWidth, globalHeight);
-				engine.placeAgents(10);
+				engine.placeAgents();
 				engine.listenSocket = new ServerSocket(port);
 				System.out.println("Listening on " + engine.listenSocket.getInetAddress().getHostAddress());
 				engine.listenSocket.setSoTimeout(waitTime);
