@@ -8,9 +8,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 
 import world.Agent;
+import engine.RemoteEngine;
 
 public class Message implements Cloneable {
 
@@ -82,9 +86,22 @@ public class Message implements Cloneable {
 		public Agent agent;
 	}
 
+	public static class LookRequest {
+		public int x;
+		public int y;
+		public int id;
+	}
+
+	public static class LookResponse {
+		public int id;
+		public List<Agent> agents = new LinkedList<Agent>();
+	}
+
 	public static final byte OFFERHELP = 0x1;
 	public static final byte SENDAGENT = 0x2;
 	public static final byte ENDTURN = 0x3;
+	public static final byte LOOK = 0x4;
+	public static final byte LOOK_RESPONSE = 0x5;
 
 	public static Comparator<Message> sendTurnComparator = new Comparator<Message>() {
 
@@ -117,8 +134,8 @@ public class Message implements Cloneable {
 	};
 
 	public void print() {
-		System.out.println("sendTurn: " + sendTurn + " messageType: "
-				+ messageType + " sign: " + sign + " data: " + data);
+		System.out.println("sendTurn: " + sendTurn + " messageType: " + messageType + " sign: "
+				+ sign + " data: " + data);
 		try {
 			System.out.write(data);
 			System.out.println();
@@ -135,9 +152,8 @@ public class Message implements Cloneable {
 		if (other instanceof Message) {
 			Message otherMsg = (Message) other;
 			result = ((this.sendTurn == otherMsg.sendTurn)
-					&& (this.messageType == otherMsg.messageType)
-					&& (this.sign != otherMsg.sign) && Arrays.equals(this.data,
-					otherMsg.data));
+					&& (this.messageType == otherMsg.messageType) && (this.sign != otherMsg.sign) && Arrays
+					.equals(this.data, otherMsg.data));
 		}
 		return result;
 	}
@@ -148,6 +164,7 @@ public class Message implements Cloneable {
 	public byte messageType;
 	private byte[] data;
 	public String id;
+	public RemoteEngine source;
 
 	public Message(int sendTurn, boolean sign, String id) {
 		this.sendTurn = sendTurn;
@@ -160,8 +177,7 @@ public class Message implements Cloneable {
 		this.messageType = messageType;
 	}
 
-	private void writeMessage(DataOutputStream dos, byte messageType,
-			int dataSize) {
+	private void writeMessage(DataOutputStream dos, byte messageType, int dataSize) {
 		try {
 			this.messageType = messageType;
 			dos.writeByte(messageType);
@@ -202,9 +218,9 @@ public class Message implements Cloneable {
 
 	}
 
-	public static void sendOfferHelpResp(OutputStream out, int tlx, int tly,
-			int width, int height, int globalWidth, int globalHeight,
-			int sendertlx, int sendertly, int senderw, int senderh) {
+	public static void sendOfferHelpResp(OutputStream out, int tlx, int tly, int width, int height,
+			int globalWidth, int globalHeight, int sendertlx, int sendertly, int senderw,
+			int senderh) {
 		try {
 			synchronized (out) {
 				DataOutputStream dos = new DataOutputStream(out);
@@ -250,7 +266,7 @@ public class Message implements Cloneable {
 	public void sendMessage(OutputStream out) {
 		synchronized (out) {
 			DataOutputStream dos = new DataOutputStream(out);
-			writeMessage(dos, (byte) this.messageType, data.length);
+			writeMessage(dos, this.messageType, data.length);
 			System.out.println("Sending: ");
 			this.print();
 			try {
@@ -267,6 +283,85 @@ public class Message implements Cloneable {
 		this.messageType = (byte) ~this.messageType;
 		this.sendMessage(out);
 		this.messageType = (byte) ~this.messageType;
+	}
+
+	public void lookRequest(int x, int y, int id) {
+		this.messageType = LOOK;
+		ByteBuffer buffer = ByteBuffer.allocate(12);
+		buffer.putInt(x);
+		buffer.putInt(y);
+		buffer.putInt(id);
+		byte[] bytes = buffer.array();
+		this.data = bytes;
+	}
+
+	public LookRequest recvLookRequest(InputStream in) {
+		recvAgent(in);
+		LookRequest req = new LookRequest();
+		DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
+		try {
+			req.x = dis.readInt();
+			req.y = dis.readInt();
+			req.id = dis.readInt();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		lookRequest(req.x, req.y, req.id);
+		return req;
+	}
+
+	public LookRequest recvLookRequest() {
+		LookRequest req = new LookRequest();
+		DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
+		try {
+			req.x = dis.readInt();
+			req.y = dis.readInt();
+			req.id = dis.readInt();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return req;
+	}
+
+	public void lookResponse(int id, Collection<? extends Agent> agents) {
+		this.messageType = LOOK_RESPONSE;
+		LinkedList<byte[]> agentBytes = new LinkedList<byte[]>();
+		for (Agent a : agents) {
+			agentBytes.add(a.toBytes());
+		}
+		int msgSize = 2 * Integer.SIZE;
+		for (byte[] b : agentBytes) {
+			msgSize += (b.length + 4);
+		}
+		ByteBuffer buffer = ByteBuffer.allocate(msgSize);
+		buffer.putInt(id);
+		buffer.putInt(agents.size());
+		for (byte[] b : agentBytes) {
+			buffer.putInt(b.length);
+			buffer.put(b, 0, b.length);
+		}
+		byte[] bytes = buffer.array();
+		this.data = bytes;
+	}
+
+	public LookResponse recvLookResponse(InputStream in) {
+		recvAgent(in);
+		LookResponse resp = new LookResponse();
+		DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
+
+		try {
+			resp.id = dis.readInt();
+			int numAgents = dis.readInt();
+			for (int i = 0; i < numAgents; ++i) {
+				int numBytes = dis.readInt();
+				Agent agent = Agent.read(dis);
+				resp.agents.add(agent);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		lookResponse(resp.id, resp.agents);
+		return resp;
 	}
 
 	/*
@@ -345,6 +440,7 @@ public class Message implements Cloneable {
 		return turn;
 	}
 
+	@Override
 	public Object clone() {
 		try {
 			return super.clone();

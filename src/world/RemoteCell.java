@@ -1,5 +1,7 @@
 package world;
 
+import java.util.Collection;
+
 import engine.RemoteEngine;
 
 public class RemoteCell extends Cell {
@@ -20,6 +22,11 @@ public class RemoteCell extends Cell {
 	public void move(Agent agent, int x, int y) {
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public Collection<? extends Agent> listAgents() {
+		return engine.getRemoteAgents(x, y);
 	}
 
 }
