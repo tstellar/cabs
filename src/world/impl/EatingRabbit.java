@@ -10,7 +10,7 @@ public class EatingRabbit extends Agent {
 	public static final int EAT_AMOUNT = 5;
 	public static final int METABOLISM_PER_TURN = 2;
 	public static final int REPRODUCE_ENERGY = 100;
-	public static final int DEATH_ENERGY = 10;
+	public static final int DEATH_ENERGY = 25;
 
 	private Random random = new Random();
 
@@ -39,7 +39,9 @@ public class EatingRabbit extends Agent {
 		}
 		if (health >= REPRODUCE_ENERGY) {
 			this.cell.add(new EatingRabbit());
-			System.out.println("Rabbit at " + cell.x + ", " + cell.y + " reproduced");
+			health = health / 2;
+			System.out.println("Rabbit at " + cell.x + ", " + cell.y + " reproduced; energy now "
+					+ health);
 		}
 
 		int x = random.nextInt(2);

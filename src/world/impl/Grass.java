@@ -26,6 +26,12 @@ public class Grass extends Agent {
 				}
 			}
 		}
+
+		if (height <= 0) {
+			System.out.println("Grass at " + cell.x + ", " + cell.y + " dying due to overeating");
+
+			die();
+		}
 	}
 
 }
