@@ -34,7 +34,7 @@ public class MessageReader implements Runnable {
 					}
 					break;
 				case Message.ENDTURN:
-					Message.endTurn(in);
+					Message.recvEndTurn(in);
 					break;
 				default:
 					System.out.println("Unknown Message type " + messageType);

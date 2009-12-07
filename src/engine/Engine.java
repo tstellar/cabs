@@ -33,4 +33,8 @@ public abstract class Engine {
 		this.height = height;
 	}
 	
+	public String getID(){
+		return tlx + "," + tly; 
+	}
+	
 }
