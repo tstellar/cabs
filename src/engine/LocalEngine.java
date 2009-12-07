@@ -297,6 +297,7 @@ public class LocalEngine extends Engine {
 					} else {
 						message = recvdMessages.poll();
 						if (message.sign == false) {
+							System.out.println("Skipping antimessage in queue");
 							processedMessages.add(message);
 							continue;
 						}
@@ -317,8 +318,7 @@ public class LocalEngine extends Engine {
 					Collection<? extends Agent> agents = getCell(lreq.x, lreq.y).listAgents();
 					Message resp = new Message(turn, true, message.source.getID());
 					resp.lookResponse(lreq.id, agents);
-					this.sendMessage(resp, message.source.out);
-					this.processedMessages.add(message);
+					resp.sendMessage(message.source.out);
 					break;
 				case Message.ENDTURN:
 					break;

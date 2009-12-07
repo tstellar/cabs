@@ -409,7 +409,6 @@ public class Message implements Cloneable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("Received agent: ");
 		this.print();
 	}
 

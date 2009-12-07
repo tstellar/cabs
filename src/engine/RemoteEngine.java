@@ -77,7 +77,7 @@ public class RemoteEngine extends Engine {
 			}
 		}
 		synchronized (localEngine.lookResponses) {
-			agents = localEngine.lookResponses.get(msgId).agents;
+			agents = localEngine.lookResponses.remove(msgId).agents;
 		}
 		return agents;
 	}
