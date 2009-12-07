@@ -2,6 +2,7 @@ package engine;
 
 import java.io.InputStream;
 import java.util.PriorityQueue;
+import java.net.Socket;
 
 import net.Message;
 import net.Message.LookRequest;
@@ -18,10 +19,22 @@ public class MessageReader implements Runnable {
 		this.engine = engine;
 		this.recvdMessages = engine.recvdMessages;
 		this.sender = sender;
-		this.in = sender.in;
+		System.out.println("Init message reader.");
 	}
 
 	public void run() {
+		if(sender.in == null){
+			try{
+			System.out.println(sender.getID());
+			System.out.println(engine.getID());
+			Socket recvSocket = engine.listenSocket.accept();
+			sender.setRecvSocket(recvSocket);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+		this.in = sender.in;
+
 		while (true) {
 			try {
 				byte messageType = (byte) in.read();
