@@ -1,7 +1,5 @@
 package world.impl;
 
-import java.util.Collection;
-
 import world.Agent;
 
 public class Rabbit extends Agent {
@@ -12,7 +10,6 @@ public class Rabbit extends Agent {
 
 		// move(r.nextInt(5),r.nextInt(5));
 		move(1, 0);
-		Collection<? extends Agent> agents = look(0, 1);
-		System.out.println(">>>>>>> I can see " + agents.size() + " agents below me");
+
 	}
 }
