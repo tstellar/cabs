@@ -179,7 +179,7 @@ public class LocalEngine extends Engine {
 	public void go() {
 
 		while (true) {
-			while (turn < 1) {
+			while (turn < 350) {
 				if (!rollback) {
 					turn++;
 					saveState();
