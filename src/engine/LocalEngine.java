@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,14 +41,16 @@ public class LocalEngine extends Engine {
 
 	Random random = new Random();
 
-	public LocalEngine(int tlx, int tly, int width, int height, int globalWidth, int globalHeight) {
+	public LocalEngine(int tlx, int tly, int width, int height,
+			int globalWidth, int globalHeight) {
 		super(tlx, tly, width, height);
 		this.states = new HashMap<Integer, ArrayList<byte[]>>();
 		this.recvdMessages = new PriorityQueue<Message>(8,
 				Message.sendTurnComparator);
 		this.antiMessages = new PriorityQueue<Message>(8,
 				Message.reverseSendTurnComparator);
-		this.unackMessages = new PriorityQueue<Message>(8, Message.sendTurnComparator);
+		this.unackMessages = new PriorityQueue<Message>(8,
+				Message.sendTurnComparator);
 		this.processedMessages = new LinkedList<Message>();
 		this.globalWidth = globalWidth;
 		this.globalHeight = globalHeight;
@@ -104,10 +107,11 @@ public class LocalEngine extends Engine {
 		// Put rolled-back events back onto the incoming queue
 		for (Message m : processedMessages) {
 			if (m.sendTurn >= turn) {
-				if(!recvdMessages.remove(m)) {
+				if (!recvdMessages.remove(m)) {
 					recvdMessages.offer(m);
 				} else {
-					System.out.println("Previously processed message annihilated");
+					System.out
+							.println("Previously processed message annihilated");
 				}
 			}
 		}
@@ -129,7 +133,7 @@ public class LocalEngine extends Engine {
 		message.sendMessage(o);
 		this.storeAntimessage(message);
 	}
-	
+
 	public RemoteEngine getPeer(String id) {
 		for (RemoteEngine re : peerList) {
 			if (re.getID() == id) {
@@ -138,23 +142,24 @@ public class LocalEngine extends Engine {
 		}
 		return null;
 	}
-	
-	private void fossilCollect(){
+
+	private void fossilCollect() {
 		int minTurn = minLocalTime();
-		for(RemoteEngine re : peerList){
+		for (RemoteEngine re : peerList) {
 			System.out.println("Remote turn is " + re.turn);
-			if(re.turn < minTurn){
+			if (re.turn < minTurn) {
 				minTurn = re.turn;
 			}
 		}
 		System.out.printf("Min turn= %d\n", minTurn);
-		//Remove old states.
+		// Remove old states.
 		System.out.printf("Current states %d\n", states.size());
-		//TODO Is this right?
+		// TODO Is this right?
 		int i = minTurn - 1;
-		while(i >= 0 && states.remove(i--) != null);
+		while (i >= 0 && states.remove(i--) != null)
+			;
 		System.out.printf("New states %d\n", states.size());
-		
+
 	}
 
 	public void go() {
@@ -185,8 +190,11 @@ public class LocalEngine extends Engine {
 				rollback = false;
 				if (turn % 5 == 0) {
 					for (int j = 0; j < peerList.size(); j++) {
-						System.out.println("ENDTURN to " + peerList.get(j).getID());
-						Message.sendEndTurn(peerList.get(j).out, minLocalTime());
+						System.out.println("ENDTURN to "
+								+ peerList.get(j).getID());
+						Message
+								.sendEndTurn(peerList.get(j).out,
+										minLocalTime());
 					}
 				}
 				handleMessages();
@@ -285,7 +293,7 @@ public class LocalEngine extends Engine {
 						needRollback = true;
 					} else {
 						message = recvdMessages.poll();
-						if(message.sign == false) {
+						if (message.sign == false) {
 							processedMessages.add(message);
 							continue;
 						}
@@ -327,13 +335,12 @@ public class LocalEngine extends Engine {
 				for (Agent a : cell.agents) {
 					Message message = new Message(this.turn, true, remote
 							.getID());
-					message.sendAgent( cell.getX(), cell.getY(), a);
+					message.sendAgent(cell.getX(), cell.getY(), a);
 					message.sendMessage(remote.out);
 				}
 			}
 		}
 		remote.setCoordinates(rTlx, rTly, rWidth, rHeight);
-		this.peerList.add(remote);
 		// TODO: Actually change the size of the data structure that
 		// holds the cells.
 		gui.dispose();
@@ -342,19 +349,22 @@ public class LocalEngine extends Engine {
 	}
 
 	public int minLocalTime() {
-		final int unprocessedTime = recvdMessages.isEmpty() ? turn : recvdMessages.peek().sendTurn;
-		final int unackTime = unackMessages.isEmpty() ? turn : unackMessages.peek().sendTurn;
-		System.out.println("Unprocessed time: " + unprocessedTime + "; unack time: " + unackTime);
+		final int unprocessedTime = recvdMessages.isEmpty() ? turn
+				: recvdMessages.peek().sendTurn;
+		final int unackTime = unackMessages.isEmpty() ? turn : unackMessages
+				.peek().sendTurn;
+		System.out.println("Unprocessed time: " + unprocessedTime
+				+ "; unack time: " + unackTime);
 		return Math.min(Math.min(unprocessedTime, unackTime), turn);
 	}
-	
+
 	public void storeAntimessage(Message message) {
 		message.sign = false;
 		synchronized (antiMessages) {
 			antiMessages.offer(message);
 		}
 	}
-	
+
 	public void storeUnack(Message message) {
 		Message m = (Message) message.clone();
 		m.sign = !m.sign;
@@ -368,6 +378,7 @@ public class LocalEngine extends Engine {
 		int globalWidth = 10;
 		int globalHeight = 10;
 		int port = 1234;
+		int waitTime = 5000;
 		LocalEngine engine = null;
 		boolean isClient = false;
 		try {
@@ -378,41 +389,59 @@ public class LocalEngine extends Engine {
 				// Use multicast instead.
 				InetAddress other = InetAddress.getByName(args[0]);
 				Socket socket = new Socket(other, port);
+				ServerSocket listenSocket = new ServerSocket(0);
 				// TODO Remove magic number.
 				RemoteEngine server = new RemoteEngine(socket);
-				Message.sendOfferHelpReq(server.out);
+				Message.sendOfferHelpReq(server.out, listenSocket.getInetAddress(), listenSocket.getLocalPort());
 				OfferHelpResponse r = Message.recvOfferHelpResp(server.in);
-				engine = new LocalEngine(r.getTlx(), r.getTly(), r.getWidth(), r.getHeight(), r
-						.getGlobalWidth(), r.getGlobalHeight());
+				engine = new LocalEngine(r.getTlx(), r.getTly(), r.getWidth(),
+						r.getHeight(), r.getGlobalWidth(), r.getGlobalHeight());
 				server.setEngine(engine);
 				engine.peerList.add(server);
 				server.setCoordinates(r.sendertlx, r.sendertly, r.senderw,
 						r.senderh);
+				ConnectInfo[] connections = Message.recvConnections(server.in);
+				for(ConnectInfo c : connections){
+					Socket peerSocket = new Socket(c.addr, c.port);
+					RemoteEngine re = new RemoteEngine(peerSocket, engine,  c.addr, c.port);
+					re.setCoordinates(c.tlx, c.tly, c.width, c.height);
+					re.listen();
+					engine.peerList.add(re);
+				}
 				server.listen();
 				// TODO: Get agents from server.
 			}
 
 			// Server case
 			else {
-				// TODO: Don't hard code everything.
 				engine = new LocalEngine(0, 0, globalWidth, globalHeight,
 						globalWidth, globalHeight);
+				engine.placeAgents(10);
 				ServerSocket serverSocket = new ServerSocket(port);
-				Socket clientSocket = serverSocket.accept();
-				// TODO Remove magic number.
-				RemoteEngine client = new RemoteEngine(clientSocket, engine);
-				// This is to read the offerHelpReq message. This
-				// should be in a method.
-				if (client.in.read() != Message.OFFERHELP)
-					throw new Exception("Expected offer help request.");
-				client.listen();
+				serverSocket.setSoTimeout(waitTime);
+				while (true) {
+					Socket clientSocket;
+					try {
+						clientSocket = serverSocket.accept();
+					} catch (SocketTimeoutException e) {
+						break;
+					}
+					// This is to read the offerHelpReq message. This
+					// should be in a method.
+					if (clientSocket.getInputStream().read() != Message.OFFERHELP){
+						clientSocket.close();
+						break;
+					}
+					Message.OfferHelpReq help = Message.recvOfferHelpReq(clientSocket.getInputStream());
+					RemoteEngine client = new RemoteEngine(clientSocket, engine, help.addr, help.port);
+					engine.peerList.add(client);
+					client.listen();
+				}
 				// TODO: Use a smart algorithm to figure out what
 				// coordinates to assign the other node.
-				engine.sendCells(client);
+				engine.sendCells();
 
 				// We probably need some kind of ACK here.
-
-				engine.placeAgents(10);
 
 			}
 			engine.print();

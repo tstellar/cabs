@@ -138,7 +138,7 @@ public class ZeroconfPeerFinder extends PeerFinder implements RegisterListener, 
 		Thread.sleep(1000);
 		pf.startSearching();
 		Thread.sleep(3000);
-		pf.unregister();
+		//pf.unregister();
 		Thread.sleep(3000);
 		pf.stopSearching();
 	}

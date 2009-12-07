@@ -6,6 +6,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -13,6 +14,11 @@ import java.util.Comparator;
 import world.Agent;
 
 public class Message implements Cloneable {
+
+	public static class OfferHelpReq {
+		InetAddress addr;
+		int port;
+	}
 
 	public static class OfferHelpResponse {
 
@@ -181,8 +187,8 @@ public class Message implements Cloneable {
 			sendTurn = dis.readInt();
 			sign = dis.readBoolean();
 			dataSize = dis.readInt();
-			System.out.println("Read Message: sendTurn =" + sendTurn + " sign " + sign
-					+ " dataSize " + dataSize);
+			System.out.println("Read Message: sendTurn =" + sendTurn + " sign "
+					+ sign + " dataSize " + dataSize);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return -1;
@@ -190,16 +196,35 @@ public class Message implements Cloneable {
 		return dataSize;
 	}
 
-	public static void sendOfferHelpReq(OutputStream out) {
+	public static void sendOfferHelpReq(OutputStream out, InetAddress addr,
+			int port) {
 		try {
 			synchronized (out) {
-				out.write(OFFERHELP);
+				DataOutputStream dos = new DataOutputStream(out);
+				dos.write(OFFERHELP);
+				dos.write(addr.getAddress());
+				dos.writeInt(port);
+				dos.flush();
 				out.flush();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
+	}
+
+	public static OfferHelpReq recvOfferHelpReq(InputStream in){
+		OfferHelpReq help = new OfferHelpReq();
+		try{
+			byte[] addr = new byte[4];
+			DataInputStream dis = new DataInputStream(in);
+			dis.readFully(addr, 0, 4);
+			help.addr = InetAddress.getByAddress(addr);
+			help.port = dis.readInt();
+		}catch(Exception e){
+		e.printStackTrace();
+		}
+		return help;
 	}
 
 	public static void sendOfferHelpResp(OutputStream out, int tlx, int tly,
@@ -289,7 +314,8 @@ public class Message implements Cloneable {
 		ReceivedAgent result = null;
 		try {
 			result = new ReceivedAgent();
-			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
+			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(
+					data));
 			result.x = dis.readInt();
 			result.y = dis.readInt();
 			result.agent = Agent.read(dis);
@@ -343,6 +369,33 @@ public class Message implements Cloneable {
 			e.printStackTrace();
 		}
 		return turn;
+	}
+	public static class ConnectInfo{
+		InetAddress addr;
+		int port;
+		int tlx;
+		int tly;
+		int width;
+		int height;
+	}
+	public static ConnectInfo[] recvConnections(InputStream in){
+		ArrayList<ConnectInfo> conns = new ArrayList<ConnectInfo>();
+		try{
+			DataInputStream = new DataInputStream(in);
+			dis.read();
+			int num = dis.readInt();
+			for(int i=0;i<num; i++){
+				ConnectInfo con = new ConnectInfo();
+				byte addr = new byte[4];
+				dis.read(addr, 0, 4);
+				conn.addr = InetAddress.getByAddress(addr);
+				conn.port = dis.readInt();
+				conn.tlx = dis.readInt();
+				conn.tly = dis.readInt();
+				conn.wdith = dis.readInt();
+				conn.height = dis.readInt();
+			}
+		}
 	}
 
 	public Object clone() {

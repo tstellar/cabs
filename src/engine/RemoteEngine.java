@@ -2,6 +2,7 @@ package engine;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 
 import net.Message;
@@ -17,6 +18,8 @@ public class RemoteEngine extends Engine {
 	LocalEngine localEngine;
 	MessageReader reader;
 	Thread readerThread;
+	InetAddress addr;
+	int port;
 
 	public RemoteEngine(Socket socket) {
 		this.socket = socket;
@@ -29,9 +32,11 @@ public class RemoteEngine extends Engine {
 		}
 	}
 
-	public RemoteEngine(Socket socket, LocalEngine localEngine) {
+	public RemoteEngine(Socket socket, LocalEngine localEngine, InetAddress addr, int port) {
 		this(socket);
 		this.localEngine = localEngine;
+		this.addr = addr;
+		this.port = port;
 	}
 
 	public void setEngine(LocalEngine engine) {
