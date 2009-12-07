@@ -25,10 +25,9 @@ public class ZeroconfPeerFinder extends PeerFinder implements RegisterListener, 
 	protected DNSSDService browser = null;
 
 	public static final String SERVICE_TYPE = "_cabs._tcp";
-	public static final int SERVICE_PORT = 1234;
 
 	@Override
-	public void register(Map<String, String> attributes) {
+	public void register(int port, Map<String, String> attributes) {
 		try {
 			TXTRecord txt = new TXTRecord();
 			if (attributes != null && attributes.size() != 0) {
@@ -37,7 +36,7 @@ public class ZeroconfPeerFinder extends PeerFinder implements RegisterListener, 
 				}
 			}
 			localRegistration = DNSSD.register(0, DNSSD.ALL_INTERFACES, null, SERVICE_TYPE, null,
-					null, SERVICE_PORT, txt, this);
+					null, port, txt, this);
 
 		} catch (DNSSDException e) {
 			e.printStackTrace();
@@ -121,7 +120,7 @@ public class ZeroconfPeerFinder extends PeerFinder implements RegisterListener, 
 		ZeroconfPeerFinder pf = new ZeroconfPeerFinder();
 		HashMap<String, String> hm = new HashMap<String, String>();
 		hm.put("Test Key", "Test Value");
-		pf.register(hm);
+		pf.register(1234, hm);
 		pf.addPeerListener(new PeerListener() {
 
 			@Override
@@ -138,7 +137,7 @@ public class ZeroconfPeerFinder extends PeerFinder implements RegisterListener, 
 		Thread.sleep(1000);
 		pf.startSearching();
 		Thread.sleep(3000);
-		pf.unregister();
+		// pf.unregister();
 		Thread.sleep(3000);
 		pf.stopSearching();
 	}
