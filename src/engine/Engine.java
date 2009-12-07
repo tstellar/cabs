@@ -32,5 +32,9 @@ public abstract class Engine {
 		this.width = width;
 		this.height = height;
 	}
-
+	
+	public String getID(){
+		return tlx + "," + tly; 
+	}
+	
 }

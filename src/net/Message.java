@@ -12,7 +12,7 @@ import java.util.Comparator;
 
 import world.Agent;
 
-public class Message {
+public class Message implements Cloneable {
 
 	public static class OfferHelpResponse {
 
@@ -117,8 +117,16 @@ public class Message {
 	};
 
 	public void print() {
-		System.out.println("sendTurn: " + sendTurn + " messageType: " + messageType + " sign: "
-				+ sign + " data: " + data);
+		System.out.println("sendTurn: " + sendTurn + " messageType: "
+				+ messageType + " sign: " + sign + " data: " + data);
+		try {
+			System.out.write(data);
+			System.out.println();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 
 	@Override
@@ -127,8 +135,9 @@ public class Message {
 		if (other instanceof Message) {
 			Message otherMsg = (Message) other;
 			result = ((this.sendTurn == otherMsg.sendTurn)
-					&& (this.messageType == otherMsg.messageType) && (this.sign != otherMsg.sign) && Arrays
-					.equals(this.data, otherMsg.data));
+					&& (this.messageType == otherMsg.messageType)
+					&& (this.sign != otherMsg.sign) && Arrays.equals(this.data,
+					otherMsg.data));
 		}
 		return result;
 	}
@@ -136,22 +145,23 @@ public class Message {
 	public int sendTurn;
 	public boolean sign;
 	private int recvTurn;
-	public int messageType;
+	public byte messageType;
 	private byte[] data;
-	public int id;
+	public String id;
 
-	public Message(int sendTurn, boolean sign, int id) {
+	public Message(int sendTurn, boolean sign, String id) {
 		this.sendTurn = sendTurn;
 		this.sign = sign;
 		this.id = id;
 	}
 
-	public Message(int recvTurn, int messageType) {
+	public Message(int recvTurn, byte messageType) {
 		this.recvTurn = recvTurn;
 		this.messageType = messageType;
 	}
 
-	private void writeMessage(DataOutputStream dos, byte messageType, int dataSize) {
+	private void writeMessage(DataOutputStream dos, byte messageType,
+			int dataSize) {
 		try {
 			this.messageType = messageType;
 			dos.writeByte(messageType);
@@ -182,30 +192,34 @@ public class Message {
 
 	public static void sendOfferHelpReq(OutputStream out) {
 		try {
-			out.write(OFFERHELP);
-			out.flush();
+			synchronized (out) {
+				out.write(OFFERHELP);
+				out.flush();
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 	}
 
-	public static void sendOfferHelpResp(OutputStream out, int tlx, int tly, int width, int height,
-			int globalWidth, int globalHeight, int sendertlx, int sendertly, int senderw,
-			int senderh) {
+	public static void sendOfferHelpResp(OutputStream out, int tlx, int tly,
+			int width, int height, int globalWidth, int globalHeight,
+			int sendertlx, int sendertly, int senderw, int senderh) {
 		try {
-			DataOutputStream dos = new DataOutputStream(out);
-			dos.write(OFFERHELP);
-			dos.writeInt(tlx);
-			dos.writeInt(tly);
-			dos.writeInt(width);
-			dos.writeInt(height);
-			dos.writeInt(globalWidth);
-			dos.writeInt(globalHeight);
-			dos.writeInt(sendertlx);
-			dos.writeInt(sendertly);
-			dos.writeInt(senderw);
-			dos.writeInt(senderh);
+			synchronized (out) {
+				DataOutputStream dos = new DataOutputStream(out);
+				dos.write(OFFERHELP);
+				dos.writeInt(tlx);
+				dos.writeInt(tly);
+				dos.writeInt(width);
+				dos.writeInt(height);
+				dos.writeInt(globalWidth);
+				dos.writeInt(globalHeight);
+				dos.writeInt(sendertlx);
+				dos.writeInt(sendertly);
+				dos.writeInt(senderw);
+				dos.writeInt(senderh);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -234,40 +248,41 @@ public class Message {
 	}
 
 	public void sendMessage(OutputStream out) {
-		DataOutputStream dos = new DataOutputStream(out);
-		writeMessage(dos, (byte) this.messageType, data.length);
-		try {
-			dos.write(data, 0, data.length);
-			dos.flush();
-			out.flush();
-		} catch (IOException e) {
-			e.printStackTrace();
+		synchronized (out) {
+			DataOutputStream dos = new DataOutputStream(out);
+			writeMessage(dos, (byte) this.messageType, data.length);
+			System.out.println("Sending: ");
+			this.print();
+			try {
+				dos.write(data, 0, data.length);
+				dos.flush();
+				out.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
+	}
+
+	public void ackMessage(OutputStream out) {
+		this.messageType = (byte) ~this.messageType;
+		this.sendMessage(out);
+		this.messageType = (byte) ~this.messageType;
 	}
 
 	/*
 	 * sendAgent: +Request: requestType (1 byte) X (4 bytes) Y (4 bytes)
 	 * Agent(serialized) (? bytes)
 	 */
-	public void sendAgent(OutputStream out, int x, int y, Agent agent) {
-		try {
-			DataOutputStream dos = new DataOutputStream(out);
-			byte[] agentBytes = agent.toBytes();
-			int messageSize = agentBytes.length + 4 + 4;
-			ByteBuffer buffer = ByteBuffer.allocate(messageSize);
-			writeMessage(dos, SENDAGENT, messageSize);
-			buffer.putInt(x);
-			buffer.putInt(y);
-			buffer.put(agentBytes);
-			byte[] bytes = buffer.array();
-			this.data = bytes;
-			dos.write(bytes, 0, bytes.length);
-			dos.flush();
-			out.flush();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public void sendAgent(int x, int y, Agent agent) {
+		byte[] agentBytes = agent.toBytes();
+		int messageSize = agentBytes.length + 4 + 4;
+		ByteBuffer buffer = ByteBuffer.allocate(messageSize);
+		this.messageType = SENDAGENT;
+		buffer.putInt(x);
+		buffer.putInt(y);
+		buffer.put(agentBytes);
+		byte[] bytes = buffer.array();
+		this.data = bytes;
 	}
 
 	public ReceivedAgent recvAgent() {
@@ -299,21 +314,26 @@ public class Message {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		System.out.println("Received agent: ");
+		this.print();
 	}
 
-	public static void endTurn(OutputStream out, int turn) {
+	public static void sendEndTurn(OutputStream out, int turn) {
 		try {
-			ByteBuffer data = ByteBuffer.allocate(5);
-			data.put(ENDTURN);
-			data.putInt(turn);
-			out.write(data.array());
-			out.flush();
+			synchronized (out) {
+				DataOutputStream dos = new DataOutputStream(out);
+				dos.write(ENDTURN);
+				dos.writeInt(turn);
+				System.out.println("Sending ENDTURN " + turn);
+				dos.flush();
+				out.flush();
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static int endTurn(InputStream in) {
+	public static int recvEndTurn(InputStream in) {
 		int turn = -1;
 		try {
 			DataInputStream dis = new DataInputStream(in);
@@ -323,5 +343,14 @@ public class Message {
 			e.printStackTrace();
 		}
 		return turn;
+	}
+
+	public Object clone() {
+		try {
+			return super.clone();
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 }
