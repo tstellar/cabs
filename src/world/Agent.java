@@ -28,8 +28,27 @@ public abstract class Agent {
 		return cell.look(x, y);
 	}
 
+	public Agent look(int x, int y, String agentType){
+		Collection<? extends Agent> list = look(x,y);
+		for(Agent a : list){
+			if(a.getClass().getName().contains(agentType)){
+				return a;
+			}
+		}
+		return null;
+	}
 	public void setCell(LocalCell cell) {
 		this.cell = cell;
+	}
+
+	public void reproduce(){
+		try{
+			Class newClass = this.getClass();
+			Agent newAgent = (Agent)newClass.newInstance();
+			this.cell.add(newAgent);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	public void die() {

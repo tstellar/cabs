@@ -24,7 +24,7 @@ import ui.CellGrid;
 import world.Agent;
 import world.Cell;
 import world.LocalCell;
-import world.impl.Rabbit;
+import world.impl.*;
 
 public class LocalEngine extends Engine {
 
