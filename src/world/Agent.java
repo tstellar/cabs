@@ -6,6 +6,7 @@ import java.io.DataOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collection;
 
 public abstract class Agent {
 
@@ -23,8 +24,16 @@ public abstract class Agent {
 		cell.move(this, x, y);
 	}
 
+	public Collection<? extends Agent> look(int x, int y) {
+		return cell.look(x, y);
+	}
+
 	public void setCell(LocalCell cell) {
 		this.cell = cell;
+	}
+
+	public void die() {
+		cell.remove(this);
 	}
 
 	public void start(int turn) {
@@ -43,8 +52,7 @@ public abstract class Agent {
 			ArrayList<Field> writeableFields = new ArrayList<Field>();
 			for (Field f : fields) {
 				int modifiers = f.getModifiers();
-				if (Modifier.isFinal(modifiers) || 
-					!Modifier.isPublic(modifiers)) {
+				if (Modifier.isFinal(modifiers) || !Modifier.isPublic(modifiers)) {
 					continue;
 				}
 				writeableFields.add(f);

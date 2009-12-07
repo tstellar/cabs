@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Collection;
 
 import engine.MessageReader;
 import net.Message;
@@ -22,6 +23,7 @@ public class RemoteEngine extends Engine {
 	Thread readerThread;
 	public InetAddress addr;
 	public int port;
+	int id;
 
 	/*This constructor should be called during the Engine discovery process
 	 * of CABS when each Engine is reading and writing from the same socket*/
@@ -87,5 +89,25 @@ public class RemoteEngine extends Engine {
 		Message message = new Message(localEngine.turn, true, getID());
 		message.sendAgent(newCell.getX(), newCell.getY(), agent);
 		localEngine.sendMessage(message, out);
+	}
+
+	public Collection<? extends Agent> getRemoteAgents(int x, int y) {
+		System.out.println("Looking at remote agents");
+		Collection<? extends Agent> agents = null;
+		int msgId = id++;
+		Message message = new Message(localEngine.turn, true, getID());
+		message.lookRequest(x, y, msgId);
+		localEngine.sendMessage(message, out);
+		while (!localEngine.lookResponses.containsKey(msgId)) {
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		synchronized (localEngine.lookResponses) {
+			agents = localEngine.lookResponses.remove(msgId).agents;
+		}
+		return agents;
 	}
 }

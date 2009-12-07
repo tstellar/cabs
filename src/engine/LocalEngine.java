@@ -8,13 +8,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Random;
 
 import net.Message;
+import net.Message.LookRequest;
 import net.Message.OfferHelpResponse;
 import net.Message.ReceivedAgent;
 import ui.CellGrid;
@@ -38,6 +39,7 @@ public class LocalEngine extends Engine {
 	PriorityQueue<Message> unackMessages;
 	PriorityQueue<Message> antiMessages;
 	ServerSocket listenSocket;
+	HashMap<Integer, Message.LookResponse> lookResponses;
 
 	CellGrid gui;
 
@@ -47,13 +49,11 @@ public class LocalEngine extends Engine {
 			int globalWidth, int globalHeight) {
 		super(tlx, tly, width, height);
 		this.states = new HashMap<Integer, ArrayList<byte[]>>();
-		this.recvdMessages = new PriorityQueue<Message>(8,
-				Message.sendTurnComparator);
-		this.antiMessages = new PriorityQueue<Message>(8,
-				Message.reverseSendTurnComparator);
-		this.unackMessages = new PriorityQueue<Message>(8,
-				Message.sendTurnComparator);
+		this.recvdMessages = new PriorityQueue<Message>(8, Message.sendTurnComparator);
+		this.antiMessages = new PriorityQueue<Message>(8, Message.reverseSendTurnComparator);
+		this.unackMessages = new PriorityQueue<Message>(8, Message.sendTurnComparator);
 		this.processedMessages = new LinkedList<Message>();
+		this.lookResponses = new HashMap<Integer, Message.LookResponse>();
 		this.globalWidth = globalWidth;
 		this.globalHeight = globalHeight;
 		peerList = new ArrayList<RemoteEngine>();
@@ -81,8 +81,7 @@ public class LocalEngine extends Engine {
 	}
 
 	private void rollback(int turn) {
-		System.err.println("Rolling back from turn " + this.turn + " to turn "
-				+ turn);
+		System.err.println("Rolling back from turn " + this.turn + " to turn " + turn);
 		rollback = true;
 		ArrayList<byte[]> state = states.get(turn);
 		for (byte[] b : state) {
@@ -121,12 +120,17 @@ public class LocalEngine extends Engine {
 		}
 
 		// Send antimessages
-		while (!this.antiMessages.isEmpty()
-				&& antiMessages.peek().sendTurn >= turn) {
+		while (!this.antiMessages.isEmpty() && antiMessages.peek().sendTurn >= turn) {
 			Message msg = antiMessages.poll();
 			RemoteEngine remote = getPeer(msg.id);
+			System.out.println("Trying to send antimessage to: " + msg.id);
+			msg.print();
 			storeUnack(msg);
-			msg.sendMessage(remote.out);
+			if (remote == null) {
+				System.out.println("Can't find who to send antimessage to: " + msg.id);
+			} else {
+				msg.sendMessage(remote.out);
+			}
 		}
 
 		this.turn = turn;
@@ -139,11 +143,16 @@ public class LocalEngine extends Engine {
 	}
 
 	public RemoteEngine getPeer(String id) {
+		System.out.println("I am " + getID() + " Getting peer: " + id);
 		for (RemoteEngine re : peerList) {
-			if (re.getID() == id) {
+			if (re.getID().equals(id)) {
+				System.out.println("Found it: " + re);
 				return re;
+			} else {
+				System.out.println("It's not: " + re + " which has id " + re.getID());
 			}
 		}
+		System.out.println("Failed to find peer " + id);
 		return null;
 	}
 
@@ -160,8 +169,7 @@ public class LocalEngine extends Engine {
 		System.out.printf("Current states %d\n", states.size());
 		// TODO Is this right?
 		int i = minTurn - 1;
-		while (i >= 0 && states.remove(i--) != null)
-			;
+		while (i >= 0 && states.remove(i--) != null);
 		System.out.printf("New states %d\n", states.size());
 
 	}
@@ -203,8 +211,7 @@ public class LocalEngine extends Engine {
 				}
 				handleMessages();
 				fossilCollect();
-				System.out.println("At the end of turn  " + turn
-						+ " the grid is:");
+				System.out.println("At the end of turn  " + turn + " the grid is:");
 				print();
 			}
 			handleMessages();
@@ -302,6 +309,7 @@ public class LocalEngine extends Engine {
 					} else {
 						message = recvdMessages.poll();
 						if (message.sign == false) {
+							System.out.println("Skipping antimessage in queue");
 							processedMessages.add(message);
 							continue;
 						}
@@ -313,10 +321,16 @@ public class LocalEngine extends Engine {
 				}
 				switch (message.messageType) {
 				case Message.SENDAGENT:
-
 					ReceivedAgent newAgent = message.recvAgent();
 					this.placeAgent(newAgent.x, newAgent.y, newAgent.agent);
 					this.processedMessages.add(message);
+					break;
+				case Message.LOOK:
+					LookRequest lreq = message.recvLookRequest();
+					Collection<? extends Agent> agents = getCell(lreq.x, lreq.y).listAgents();
+					Message resp = new Message(turn, true, message.source.getID());
+					resp.lookResponse(lreq.id, agents);
+					resp.sendMessage(message.source.out);
 					break;
 				case Message.ENDTURN:
 					break;
@@ -404,6 +418,11 @@ public class LocalEngine extends Engine {
 		synchronized (unackMessages) {
 			unackMessages.offer(m);
 		}
+	}
+
+	public Collection<? extends Agent> look(int x, int y) {
+		Cell c = this.findCell(x, y);
+		return c.listAgents();
 	}
 
 	public static void main(String[] args) {
@@ -508,4 +527,5 @@ public class LocalEngine extends Engine {
 			e.printStackTrace();
 		}
 	}
+
 }

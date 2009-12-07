@@ -1,5 +1,7 @@
 package world;
 
+import java.util.Collection;
+
 public abstract class Cell {
 
 	public int x;
@@ -13,6 +15,8 @@ public abstract class Cell {
 	abstract public void move(Agent agent, int x, int y);
 
 	abstract public void add(Agent agent);
+
+	abstract public Collection<? extends Agent> listAgents();
 
 	public void setX(int x) {
 		this.x = x;

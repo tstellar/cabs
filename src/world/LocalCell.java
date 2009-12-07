@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 
 import engine.LocalEngine;
 
@@ -40,6 +41,15 @@ public class LocalCell extends Cell {
 	public void add(Agent agent) {
 		agent.setCell(this);
 		getAgents().add(agent);
+	}
+
+	@Override
+	public Collection<? extends Agent> listAgents() {
+		return this.getAgents();
+	}
+
+	public Collection<? extends Agent> look(int x, int y) {
+		return engine.look(this.x + x, this.y + y);
 	}
 
 	public void remove(Agent agent) {

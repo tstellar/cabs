@@ -32,7 +32,7 @@ public abstract class PeerFinder {
 
 	public abstract void stopSearching();
 
-	public abstract void register(Map<String, String> attributes);
+	public abstract void register(int port, Map<String, String> attributes);
 
 	public abstract void unregister();
 
