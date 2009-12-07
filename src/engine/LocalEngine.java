@@ -416,9 +416,8 @@ public class LocalEngine extends Engine {
 		}
 		/* Redraw the GUI. */
 		if (enableGUI) {
-			gui.repaint();
-			//gui.dispose();
-			//gui = new CellGrid(height, width, tlx, tly);
+			gui.dispose();
+			gui = new CellGrid(height, width, tlx, tly);
 		}
 
 	}

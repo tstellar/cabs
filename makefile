@@ -6,7 +6,8 @@ AP=src/world/impl/
 	test
 	agents
 
-cabs: $(AP)/DumbRabbit.class $(AP)/DumbWolf.class $(AP)/Grass.class
+#cabs: $(AP)/DumbRabbit.class $(AP)/DumbWolf.class $(AP)/Grass.class
+cabs:
 	javac -cp src/ src/engine/LocalEngine.java
 
 
