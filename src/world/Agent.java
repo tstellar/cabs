@@ -1,5 +1,5 @@
 package world;
-
+import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -15,6 +15,7 @@ public abstract class Agent {
 	public boolean hasMoved = false;
 
 	public abstract void go();
+	public abstract Color getColor();
 
 	/*
 	 * public void look(); public void reproduce(); public void die(); public

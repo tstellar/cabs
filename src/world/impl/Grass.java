@@ -1,5 +1,6 @@
 package world.impl;
 
+import java.awt.Color;
 import java.util.Collection;
 
 import world.Agent;
@@ -32,6 +33,10 @@ public class Grass extends Agent {
 
 			die();
 		}
+	}
+
+	public Color getColor(){
+		return Color.GREEN;
 	}
 
 }

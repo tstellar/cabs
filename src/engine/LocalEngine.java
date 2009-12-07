@@ -35,7 +35,7 @@ public class LocalEngine extends Engine {
 	int stopTurn = 50;
 	public int turn = 0;
 	boolean rollback = false;
-	boolean enableGUI = false;
+	boolean enableGUI = true;
 	HashMap<Integer, ArrayList<byte[]>> states;
 	public PriorityQueue<Message> recvdMessages;
 	LinkedList<Message> processedMessages;
@@ -295,7 +295,10 @@ public class LocalEngine extends Engine {
 				if (cell.getAgents().size() > 0) {
 					System.out.print(cell.getAgents().size() + " ");
 					if (enableGUI) {
-						gui.setColor(j, i, CellGrid.agent1);
+						for(Agent a : cell.getAgents()){
+							gui.setColor(j, i, a.getColor());
+						}
+						gui.setColor(j, i, CellGrid.empty);
 					}
 				} else {
 					System.out.print("- ");
