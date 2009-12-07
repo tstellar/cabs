@@ -179,7 +179,7 @@ public class LocalEngine extends Engine {
 	public void go() {
 
 		while (true) {
-			while (turn < 350) {
+			while (turn < 1) {
 				if (!rollback) {
 					turn++;
 					saveState();
@@ -391,8 +391,8 @@ public class LocalEngine extends Engine {
 			} catch (Exception e) {
 			}
 			/* Send the RemoteEngine its new cells. */
-			for (int i = re.tlx; i < re.width; i++) {
-				for (int j = re.tly; j < re.height; j++) {
+			for (int i = re.tlx; i < re.tlx + re.width; i++) {
+				for (int j = re.tly; j < re.tly + re.height; j++) {
 					LocalCell cell = getCell(i, j);
 					for (Agent a : cell.agents) {
 						Message message = new Message(this.turn, true, re.getID());
@@ -487,6 +487,19 @@ public class LocalEngine extends Engine {
 				engine.peerList.add(server);
 				server.setCoordinates(r.sendertlx, r.sendertly, r.senderw, r.senderh);
 				System.out.println("Waiting for server to send connections.");
+				byte messageType = 0x0;
+				do{
+					System.out.println("In DO/");
+					messageType = (byte)server.in.read();
+					switch(messageType){
+						case Message.SENDAGENT:
+							Message message = new Message();
+							message.recvAgent(server.in);
+							ReceivedAgent agent = message.recvAgent();
+							engine.placeAgent(agent.x, agent.y, agent.agent);
+							break;
+					}
+				}while(messageType == Message.SENDAGENT);
 				ArrayList<Message.ConnectInfo> connections = Message.recvConnections(server.in);
 
 				/* Create RemoteEngine objects and start listening for messages. */

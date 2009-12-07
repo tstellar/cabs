@@ -185,6 +185,8 @@ public class Message implements Cloneable {
 		this.messageType = messageType;
 	}
 
+	public Message(){}
+
 	private void writeMessage(DataOutputStream dos, byte messageType, int dataSize) {
 		try {
 			this.messageType = messageType;
@@ -489,7 +491,6 @@ public class Message implements Cloneable {
 		ArrayList<ConnectInfo> conns = new ArrayList<ConnectInfo>();
 		try{
 			DataInputStream dis = new DataInputStream(in);
-			dis.read();
 			int num = dis.readInt();
 			System.out.println("Receiving " + num + " connections");
 			for(int i=0;i<num; i++){
