@@ -1,12 +1,12 @@
 package engine;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.PriorityQueue;
+
 import net.Message;
 
-public class MessageReader implements Runnable{
-	
+public class MessageReader implements Runnable {
+
 	private PriorityQueue<Message> recvdMessages;
 	private InputStream in;
 	private LocalEngine engine;
@@ -18,7 +18,7 @@ public class MessageReader implements Runnable{
 		this.sender = sender;
 		this.in = sender.in;
 	}
-	
+
 	public void run() {
 		while (true) {
 			try {
@@ -62,9 +62,9 @@ public class MessageReader implements Runnable{
 					}while(messageType != -1);
 					System.exit(0);
 				}
-				if(messageType == -1){
+				if (messageType == -1) {
 					break;
-					
+
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -73,4 +73,3 @@ public class MessageReader implements Runnable{
 	}
 
 }
-

@@ -1,6 +1,6 @@
 package world;
-import engine.RemoteEngine;
 
+import engine.RemoteEngine;
 
 public class RemoteCell extends Cell {
 

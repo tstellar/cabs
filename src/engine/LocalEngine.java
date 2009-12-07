@@ -1,11 +1,8 @@
 package engine;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,7 +12,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Random;
-import java.util.Stack;
+
 import net.Message;
 import net.Message.OfferHelpResponse;
 import net.Message.ReceivedAgent;
@@ -43,8 +40,7 @@ public class LocalEngine extends Engine {
 
 	Random random = new Random();
 
-	public LocalEngine(int tlx, int tly, int width, int height,
-			int globalWidth, int globalHeight) {
+	public LocalEngine(int tlx, int tly, int width, int height, int globalWidth, int globalHeight) {
 		super(tlx, tly, width, height);
 		this.states = new HashMap<Integer, ArrayList<byte[]>>();
 		this.recvdMessages = new PriorityQueue<Message>(8,
@@ -386,8 +382,8 @@ public class LocalEngine extends Engine {
 				RemoteEngine server = new RemoteEngine(socket);
 				Message.sendOfferHelpReq(server.out);
 				OfferHelpResponse r = Message.recvOfferHelpResp(server.in);
-				engine = new LocalEngine(r.getTlx(), r.getTly(), r.getWidth(),
-						r.getHeight(), r.getGlobalWidth(), r.getGlobalHeight());
+				engine = new LocalEngine(r.getTlx(), r.getTly(), r.getWidth(), r.getHeight(), r
+						.getGlobalWidth(), r.getGlobalHeight());
 				server.setEngine(engine);
 				engine.peerList.add(server);
 				server.setCoordinates(r.sendertlx, r.sendertly, r.senderw,

@@ -1,10 +1,9 @@
 package engine;
-import java.io.IOException;
-import java.net.Socket;
+
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.DataOutputStream;
-import java.io.DataInputStream;
+import java.net.Socket;
+
 import net.Message;
 import world.Agent;
 import world.Cell;
@@ -24,7 +23,8 @@ public class RemoteEngine extends Engine {
 		try {
 			this.out = socket.getOutputStream();
 			this.in = socket.getInputStream();
-		}catch(Exception e){
+
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}

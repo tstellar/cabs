@@ -15,6 +15,7 @@ import world.Agent;
 public class Message implements Cloneable {
 
 	public static class OfferHelpResponse {
+
 		private int tlx;
 		private int tly;
 		private int width;
@@ -180,8 +181,8 @@ public class Message implements Cloneable {
 			sendTurn = dis.readInt();
 			sign = dis.readBoolean();
 			dataSize = dis.readInt();
-			System.out.println("Read Message: sendTurn =" + sendTurn + " sign "
-					+ sign + " dataSize " + dataSize);
+			System.out.println("Read Message: sendTurn =" + sendTurn + " sign " + sign
+					+ " dataSize " + dataSize);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return -1;
@@ -230,12 +231,12 @@ public class Message implements Cloneable {
 			// TODO verify message type
 			in.read();
 			DataInputStream dis = new DataInputStream(in);
-			r.setTlx(dis.readInt());
-			r.setTly(dis.readInt());
-			r.setWidth(dis.readInt());
-			r.setHeight(dis.readInt());
-			r.setGlobalWidth(dis.readInt());
-			r.setGlobalHeight(dis.readInt());
+			r.tlx = (dis.readInt());
+			r.tly = (dis.readInt());
+			r.width = (dis.readInt());
+			r.height = (dis.readInt());
+			r.globalWidth = (dis.readInt());
+			r.globalHeight = (dis.readInt());
 			r.sendertlx = dis.readInt();
 			r.sendertly = dis.readInt();
 			r.senderw = dis.readInt();
@@ -288,8 +289,7 @@ public class Message implements Cloneable {
 		ReceivedAgent result = null;
 		try {
 			result = new ReceivedAgent();
-			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(
-					data));
+			DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
 			result.x = dis.readInt();
 			result.y = dis.readInt();
 			result.agent = Agent.read(dis);
