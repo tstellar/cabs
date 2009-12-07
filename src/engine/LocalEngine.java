@@ -31,11 +31,13 @@ public class LocalEngine extends Engine {
 	int globalHeight;
 	public int turn = 0;
 	boolean rollback = false;
+	boolean enableGUI = false;
 	HashMap<Integer, ArrayList<byte[]>> states;
 	public PriorityQueue<Message> recvdMessages;
 	LinkedList<Message> processedMessages;
 	PriorityQueue<Message> unackMessages;
 	PriorityQueue<Message> antiMessages;
+	ServerSocket listenSocket;
 
 	CellGrid gui;
 
@@ -56,7 +58,9 @@ public class LocalEngine extends Engine {
 		this.globalHeight = globalHeight;
 		peerList = new ArrayList<RemoteEngine>();
 		cells = new LocalCell[height][width];
-		gui = new CellGrid(this.height, this.width, tlx, tly);
+		if(enableGUI){
+			gui = new CellGrid(this.height, this.width, tlx, tly);
+		}
 		for (int i = 0; i < this.height; i++) {
 			for (int j = 0; j < this.width; j++) {
 				cells[i][j] = new LocalCell(tlx + j, tly + i, this);
@@ -264,10 +268,14 @@ public class LocalEngine extends Engine {
 				LocalCell cell = cells[i][j];
 				if (cell.getAgents().size() > 0) {
 					System.out.print("* ");
-					gui.setColor(j, i, CellGrid.agent1);
+					if(enableGUI){
+						gui.setColor(j, i, CellGrid.agent1);
+					}
 				} else {
 					System.out.print("- ");
-					gui.setColor(j, i, CellGrid.empty);
+					if(enableGUI){
+						gui.setColor(j, i, CellGrid.empty);
+					}
 				}
 			}
 			System.out.println();
@@ -319,32 +327,57 @@ public class LocalEngine extends Engine {
 		}
 	}
 
-	private void sendCells(RemoteEngine remote) {
-		// TODO: Send agents along with cells.
-		int rWidth = this.width / 2;
+	private void sendCells() {
+		/*The Server will be have more cells than the rest of the Engines,
+		 * but that is OK.
+		 */
+		int totalEngines = peerList.size() + 1;
+		int rWidth = this.width / totalEngines;
 		int rHeight = this.height;
-		int rTlx = this.width - rWidth;
 		int rTly = 0;
-
-		this.width = this.width - rWidth;
-		Message.sendOfferHelpResp(remote.out, rTlx, rTly, rWidth, rHeight,
-				globalWidth, globalHeight, tlx, tly, width, height);
-		for (int i = rTlx; i < rWidth; i++) {
-			for (int j = rTly; j < rHeight; j++) {
-				LocalCell cell = getCell(i, j);
-				for (Agent a : cell.agents) {
-					Message message = new Message(this.turn, true, remote
-							.getID());
-					message.sendAgent(cell.getX(), cell.getY(), a);
-					message.sendMessage(remote.out);
+		/*Calculate the coordinates for all the RemoteEngines.*/
+		for(RemoteEngine re : peerList){
+			int rTlx = this.width - rWidth;
+			this.width -= rWidth;
+			re.setCoordinates(rTlx, rTly, rWidth, rHeight);
+		}
+		/*Send the cells to the RemoteEngines.  The reason we aren't
+		 * doing this in the same loop where we calculate the 
+		 * coordinates, is because we need to know the server
+		 * coordinates to send the OfferHelpResp message.  I am aware
+		 * we could calculate it ahead of time, but this way is less
+		 * prone to bugs.
+		 */
+		for(RemoteEngine re: peerList){
+			/*Tell the RemoteEngine its coordinates.*/
+			Message.sendOfferHelpResp(re.out, re.tlx, re.tly,
+			re.width, re.height, globalWidth, globalHeight, tlx, 
+							tly, width, height);
+			try{System.out.println("send resp");Thread.sleep(2000);}catch(Exception e){}
+			/*Send the RemoteEngine its new cells.*/
+			for (int i = re.tlx; i < re.width; i++) {
+				for (int j = re.tly; j < re.height; j++) {
+					LocalCell cell = getCell(i, j);
+					for (Agent a : cell.agents) {
+						Message message = new Message(
+						this.turn, true, re.getID());
+						message.sendAgent(cell.getX(), cell.getY(), a);
+						message.sendMessage(re.out);
+					}
 				}
 			}
+			/*Send the coordinates of the other RemoteEngines.*/
+			System.out.println("Sending connections.");
+			Message.sendConnections(re.out, peerList);
+			System.out.println("done.");
+			try{System.out.println("send resp");Thread.sleep(2000);}catch(Exception e){}
+
 		}
-		remote.setCoordinates(rTlx, rTly, rWidth, rHeight);
-		// TODO: Actually change the size of the data structure that
-		// holds the cells.
-		gui.dispose();
-		gui = new CellGrid(height, width, tlx, tly);
+		/* Redraw the GUI. */
+		if(enableGUI){
+			gui.dispose();
+			gui = new CellGrid(height, width, tlx, tly);
+		}
 
 	}
 
@@ -385,31 +418,51 @@ public class LocalEngine extends Engine {
 
 			// Client case
 			if (args.length == 1) {
+				
 				isClient = true;
-				// Use multicast instead.
 				InetAddress other = InetAddress.getByName(args[0]);
-				Socket socket = new Socket(other, port);
+				/*Connect to the server.*/
+				Socket serverSend = new Socket(other, port);
+				/*Create a socket to listen for messages sent
+				 * by the server.*/
 				ServerSocket listenSocket = new ServerSocket(0);
-				// TODO Remove magic number.
-				RemoteEngine server = new RemoteEngine(socket);
-				Message.sendOfferHelpReq(server.out, listenSocket.getInetAddress(), listenSocket.getLocalPort());
+				/*Alert the server of our presence.*/
+				System.out.println("Listening on " + listenSocket.getInetAddress().getHostAddress());
+				Message.sendOfferHelpReq(serverSend.getOutputStream(), listenSocket.getInetAddress(), listenSocket.getLocalPort());
+				/*Listen for the server's response.*/
+				System.out.println("Waiting for server.");
+				Socket serverRecv = listenSocket.accept();
+				System.out.println("Found Server.");
+				RemoteEngine server = new RemoteEngine(serverSend, serverRecv);
+				System.out.println("Waiting for server to accept help.");
 				OfferHelpResponse r = Message.recvOfferHelpResp(server.in);
 				engine = new LocalEngine(r.getTlx(), r.getTly(), r.getWidth(),
 						r.getHeight(), r.getGlobalWidth(), r.getGlobalHeight());
+				engine.listenSocket = listenSocket;
 				server.setEngine(engine);
 				engine.peerList.add(server);
 				server.setCoordinates(r.sendertlx, r.sendertly, r.senderw,
 						r.senderh);
-				ConnectInfo[] connections = Message.recvConnections(server.in);
-				for(ConnectInfo c : connections){
-					Socket peerSocket = new Socket(c.addr, c.port);
-					RemoteEngine re = new RemoteEngine(peerSocket, engine,  c.addr, c.port);
+				System.out.println("Waiting for server to send connections.");
+				ArrayList<Message.ConnectInfo> connections = Message.recvConnections(server.in);
+				
+				/*Create RemoteEngine objects and start listening for messages.*/
+				for(Message.ConnectInfo c : connections){
+					if(c.tlx == engine.tlx && c.tly == engine.tly){
+						System.out.printf("Skipping %d,%d\n",engine.tlx, engine.tly);
+						continue;
+					}
+					RemoteEngine re = new RemoteEngine(engine,  c.addr, c.port);
 					re.setCoordinates(c.tlx, c.tly, c.width, c.height);
-					re.listen();
 					engine.peerList.add(re);
+					System.out.println("Calling listen.");
+					re.listen();
+					Socket peerSocket = new Socket(c.addr, c.port);
+					re.setSendSocket(peerSocket);
 				}
+				System.out.println("Calling listen.");
+				/*Listen for messages from the server.*/
 				server.listen();
-				// TODO: Get agents from server.
 			}
 
 			// Server case
@@ -417,23 +470,28 @@ public class LocalEngine extends Engine {
 				engine = new LocalEngine(0, 0, globalWidth, globalHeight,
 						globalWidth, globalHeight);
 				engine.placeAgents(10);
-				ServerSocket serverSocket = new ServerSocket(port);
-				serverSocket.setSoTimeout(waitTime);
+				engine.listenSocket = new ServerSocket(port);
+				System.out.println("Listening on " + engine.listenSocket.getInetAddress().getHostAddress());
+				engine.listenSocket.setSoTimeout(waitTime);
 				while (true) {
-					Socket clientSocket;
+					Socket clientRecv;
 					try {
-						clientSocket = serverSocket.accept();
+						clientRecv = engine.listenSocket.accept();
+						System.out.println("Heard a socket.");
 					} catch (SocketTimeoutException e) {
 						break;
 					}
-					// This is to read the offerHelpReq message. This
-					// should be in a method.
-					if (clientSocket.getInputStream().read() != Message.OFFERHELP){
-						clientSocket.close();
+					/*Wait for an offerHelp Request*/
+					if (clientRecv.getInputStream().read() != Message.OFFERHELP){
+						System.err.println("Bad message, disconnecting socket.");
+						clientRecv.close();
 						break;
 					}
-					Message.OfferHelpReq help = Message.recvOfferHelpReq(clientSocket.getInputStream());
-					RemoteEngine client = new RemoteEngine(clientSocket, engine, help.addr, help.port);
+					Message.OfferHelpReq help = Message.recvOfferHelpReq(clientRecv.getInputStream());
+					System.out.println("Connecting to " + help.addr.getHostAddress());
+					Socket clientSend = new Socket(help.addr.getHostAddress(), help.port);
+					RemoteEngine client = new RemoteEngine(clientSend, clientRecv);
+					client.setEngine(engine);
 					engine.peerList.add(client);
 					client.listen();
 				}

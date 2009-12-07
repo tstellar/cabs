@@ -10,14 +10,16 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.ArrayList;
 
 import world.Agent;
+import engine.RemoteEngine;
 
 public class Message implements Cloneable {
 
 	public static class OfferHelpReq {
-		InetAddress addr;
-		int port;
+		public InetAddress addr;
+		public int port;
 	}
 
 	public static class OfferHelpResponse {
@@ -91,6 +93,7 @@ public class Message implements Cloneable {
 	public static final byte OFFERHELP = 0x1;
 	public static final byte SENDAGENT = 0x2;
 	public static final byte ENDTURN = 0x3;
+	public static final byte SENDCONNS = 0x4;
 
 	public static Comparator<Message> sendTurnComparator = new Comparator<Message>() {
 
@@ -203,6 +206,9 @@ public class Message implements Cloneable {
 				DataOutputStream dos = new DataOutputStream(out);
 				dos.write(OFFERHELP);
 				dos.write(addr.getAddress());
+				System.out.println("Writing.. ");
+				System.out.write(addr.getAddress());
+				System.out.println();
 				dos.writeInt(port);
 				dos.flush();
 				out.flush();
@@ -219,6 +225,8 @@ public class Message implements Cloneable {
 			byte[] addr = new byte[4];
 			DataInputStream dis = new DataInputStream(in);
 			dis.readFully(addr, 0, 4);
+			System.out.write(addr);
+			System.out.println();
 			help.addr = InetAddress.getByAddress(addr);
 			help.port = dis.readInt();
 		}catch(Exception e){
@@ -244,6 +252,8 @@ public class Message implements Cloneable {
 				dos.writeInt(sendertly);
 				dos.writeInt(senderw);
 				dos.writeInt(senderh);
+				dos.flush();
+				out.flush();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -253,8 +263,10 @@ public class Message implements Cloneable {
 	public static OfferHelpResponse recvOfferHelpResp(InputStream in) {
 		OfferHelpResponse r = new OfferHelpResponse();
 		try {
+			System.out.println("OHR");
 			// TODO verify message type
 			in.read();
+			System.out.println("Read message type.");
 			DataInputStream dis = new DataInputStream(in);
 			r.tlx = (dis.readInt());
 			r.tly = (dis.readInt());
@@ -266,6 +278,7 @@ public class Message implements Cloneable {
 			r.sendertly = dis.readInt();
 			r.senderw = dis.readInt();
 			r.senderh = dis.readInt();
+			System.out.println("Done");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -371,30 +384,58 @@ public class Message implements Cloneable {
 		return turn;
 	}
 	public static class ConnectInfo{
-		InetAddress addr;
-		int port;
-		int tlx;
-		int tly;
-		int width;
-		int height;
+		public InetAddress addr;
+		public int port;
+		public int tlx;
+		public int tly;
+		public int width;
+		public int height;
 	}
-	public static ConnectInfo[] recvConnections(InputStream in){
+
+	public static ArrayList<ConnectInfo> recvConnections(InputStream in){
 		ArrayList<ConnectInfo> conns = new ArrayList<ConnectInfo>();
 		try{
-			DataInputStream = new DataInputStream(in);
+			DataInputStream dis = new DataInputStream(in);
 			dis.read();
 			int num = dis.readInt();
+			System.out.println("Receiving " + num + " connections");
 			for(int i=0;i<num; i++){
-				ConnectInfo con = new ConnectInfo();
-				byte addr = new byte[4];
+				ConnectInfo conn = new ConnectInfo();
+				byte[] addr = new byte[4];
 				dis.read(addr, 0, 4);
 				conn.addr = InetAddress.getByAddress(addr);
 				conn.port = dis.readInt();
 				conn.tlx = dis.readInt();
 				conn.tly = dis.readInt();
-				conn.wdith = dis.readInt();
+				conn.width = dis.readInt();
 				conn.height = dis.readInt();
+				conns.add(conn);
+				System.out.println(conn.addr.getHostAddress() + " " + conn.port);
 			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return conns;
+	}
+
+	public static void sendConnections(OutputStream out, ArrayList<RemoteEngine> remotes){
+		try{
+			DataOutputStream dos = new DataOutputStream(out);
+			dos.write(SENDCONNS);
+			dos.writeInt(remotes.size());
+			for(RemoteEngine r : remotes){
+				dos.write(r.addr.getAddress());
+				dos.writeInt(r.port);
+				dos.writeInt(r.tlx);
+				dos.writeInt(r.tly);
+				dos.writeInt(r.width);
+				dos.writeInt(r.height);
+			}
+			dos.flush();
+			out.flush();
+
+		}catch(Exception e){
+			e.printStackTrace();
 		}
 	}
 

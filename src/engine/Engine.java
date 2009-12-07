@@ -4,11 +4,11 @@ import world.Cell;
 
 public abstract class Engine {
 
-	protected int tlx;
-	protected int tly;
-	protected int width;
-	protected int height;
-	protected int turn;
+	public int tlx;
+	public int tly;
+	public int width;
+	public int height;
+	public int turn;
 
 	public abstract Cell findCell(int x, int y);
 
