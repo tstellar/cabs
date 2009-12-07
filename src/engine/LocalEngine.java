@@ -34,7 +34,7 @@ public class LocalEngine extends Engine {
 	int globalHeight;
 	public int turn = 0;
 	boolean rollback = false;
-	boolean enableGUI = false;
+	boolean enableGUI = true;
 	HashMap<Integer, ArrayList<byte[]>> states;
 	public PriorityQueue<Message> recvdMessages;
 	LinkedList<Message> processedMessages;
@@ -179,7 +179,7 @@ public class LocalEngine extends Engine {
 	public void go() {
 
 		while (true) {
-			while (turn < 350) {
+			while (turn < 3) {
 				if (!rollback) {
 					turn++;
 					saveState();
@@ -294,12 +294,14 @@ public class LocalEngine extends Engine {
 				if (cell.getAgents().size() > 0) {
 					System.out.print(cell.getAgents().size() + " ");
 					if (enableGUI) {
-						gui.setColor(j, i, CellGrid.agent1);
+						for(Agent a : cell.getAgents()){
+							gui.setColor(j, i, a.getColor());
+						}
 					}
 				} else {
 					System.out.print("- ");
 					if (enableGUI) {
-						gui.setColor(j, i, CellGrid.empty);
+//						gui.setColor(j, i, CellGrid.empty);
 					}
 				}
 			}
@@ -414,8 +416,9 @@ public class LocalEngine extends Engine {
 		}
 		/* Redraw the GUI. */
 		if (enableGUI) {
-			gui.dispose();
-			gui = new CellGrid(height, width, tlx, tly);
+			gui.repaint();
+			//gui.dispose();
+			//gui = new CellGrid(height, width, tlx, tly);
 		}
 
 	}

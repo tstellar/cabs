@@ -1,8 +1,11 @@
 package ui;
 
+import java.util.*;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.Graphics;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
@@ -71,7 +74,17 @@ public class CellGrid extends JFrame {
 	 */
 	public void setColor(int xPos, int yPos, Color color) {
 		// myList.get(yPos-tly).get(xPos-tlx).setBackground(color);
-		myList.get(yPos).get(xPos).setBackground(color);
+		HashMap <Color, Integer> map = myList.get(yPos).get(xPos).map;
+		if(map == null){
+			return;
+		}
+		if(!map.containsKey(color)){
+			map.put(color, 1);
+			return;
+		}
+		int count = map.get(color);
+		count++;
+		map.put(color, count);
 	}
 
 	// could extend anything that's Swing (not awt)
@@ -79,6 +92,9 @@ public class CellGrid extends JFrame {
 	// This could potentially be something that held text like 4r,3g = 4
 	// rabbits, 3 grass
 	public class myJCanvas extends JPanel {
+		
+		public HashMap<Color, Integer> map;
+
 		public myJCanvas(int tempWidth, int tempHeight) {
 			this.setSize(tempWidth, tempHeight); // sizes that do nothing
 			// because of GridLayout
@@ -92,6 +108,26 @@ public class CellGrid extends JFrame {
 		public myJCanvas() {
 			this.setSize(30, 30);
 			this.setBackground(Color.blue);
+			this.map = new HashMap<Color, Integer>();
+		}
+
+		public void paintComponent(Graphics g){
+			super.paintComponent(g);
+			if(map == null || map.size() ==0){
+				g.clearRect(0,0,this.getWidth(),this.getHeight());
+				return;
+			}
+			Set<Map.Entry<Color, Integer>> set = map.entrySet();
+			int count = set.size();
+			int n = 0;
+			int width = this.getWidth();
+			int height = this.getHeight();
+			for(Map.Entry<Color, Integer> s : set){
+				g.setColor(s.getKey());
+				g.drawString("" + s.getValue(), n, height/2);
+				n += width / count;
+			}
+			map.clear();
 		}
 	}
 
