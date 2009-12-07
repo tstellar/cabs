@@ -10,7 +10,7 @@ import java.util.Collection;
 
 public abstract class Agent {
 
-	transient LocalCell cell;
+	protected transient LocalCell cell;
 	int turn = 0;
 	public boolean hasMoved = false;
 
