@@ -331,8 +331,11 @@ public class LocalEngine extends Engine {
 					} else {
 						message = recvdMessages.poll();
 						if (message.sign == false) {
+							if(recvdMessages.remove(message)){
+								System.out.println("Possible");
+							}
 							System.out.println("Skipping antimessage in queue");
-							processedMessages.add(message);
+//							processedMessages.add(message);
 							continue;
 						}
 					}
