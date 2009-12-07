@@ -1,7 +1,7 @@
 package world.impl;
 
 import java.util.Random;
-
+import java.awt.Color;
 import world.Agent;
 
 public class DumbRabbit extends Agent {
@@ -17,5 +17,9 @@ public class DumbRabbit extends Agent {
 		if (age == 5) {
 			reproduce();
 		}
+	}
+
+	public Color getColor(){
+		return Color.RED;
 	}
 }	

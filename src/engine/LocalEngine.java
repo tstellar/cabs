@@ -297,11 +297,12 @@ public class LocalEngine extends Engine {
 						for(Agent a : cell.getAgents()){
 							gui.setColor(j, i, a.getColor());
 						}
+						gui.setColor(j, i, CellGrid.empty);
 					}
 				} else {
 					System.out.print("- ");
 					if (enableGUI) {
-//						gui.setColor(j, i, CellGrid.empty);
+						gui.setColor(j, i, CellGrid.empty);
 					}
 				}
 			}

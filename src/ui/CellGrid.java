@@ -74,17 +74,25 @@ public class CellGrid extends JFrame {
 	 */
 	public void setColor(int xPos, int yPos, Color color) {
 		// myList.get(yPos-tly).get(xPos-tlx).setBackground(color);
-		HashMap <Color, Integer> map = myList.get(yPos).get(xPos).map;
+		myJCanvas c = myList.get(yPos).get(xPos);
+		if(color!=CellGrid.empty){
+		HashMap <Color, Integer> map = c.map;
 		if(map == null){
 			return;
 		}
 		if(!map.containsKey(color)){
 			map.put(color, 1);
-			return;
 		}
+		else{
 		int count = map.get(color);
 		count++;
 		map.put(color, count);
+		}
+		}
+		c.paintImmediately(0,0,c.getWidth(),c.getHeight());
+		if(color == CellGrid.empty){
+			c.map.clear();
+		}
 	}
 
 	// could extend anything that's Swing (not awt)
@@ -127,7 +135,6 @@ public class CellGrid extends JFrame {
 				g.drawString("" + s.getValue(), n, height/2);
 				n += width / count;
 			}
-			map.clear();
 		}
 	}
 

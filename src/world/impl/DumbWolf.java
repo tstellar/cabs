@@ -1,5 +1,6 @@
 package world.impl;
 
+import java.awt.Color;
 import java.util.Random;
 
 import world.Agent;
@@ -27,5 +28,8 @@ public class DumbWolf extends Agent {
 			}
 		}
 		
+	}
+	public Color getColor(){
+		return Color.ORANGE;
 	}
 }	

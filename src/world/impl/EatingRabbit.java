@@ -2,7 +2,7 @@ package world.impl;
 
 import java.util.Collection;
 import java.util.Random;
-
+import java.awt.Color;
 import world.Agent;
 
 public class EatingRabbit extends Agent {
@@ -50,5 +50,8 @@ public class EatingRabbit extends Agent {
 		System.out.println("Rabbit at " + cell.x + ", " + cell.y + " moving by " + x + ", " + y);
 
 		move(x, y);
+	}
+	public Color getColor(){
+		return Color.RED;
 	}
 }
