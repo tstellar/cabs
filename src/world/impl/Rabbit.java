@@ -10,6 +10,6 @@ public class Rabbit extends Agent {
 
 		// move(r.nextInt(5),r.nextInt(5));
 		move(1, 0);
-		look(0, 1);
+		look(1, 1);
 	}
 }

@@ -116,8 +116,14 @@ public class LocalEngine extends Engine {
 		while (!this.antiMessages.isEmpty() && antiMessages.peek().sendTurn >= turn) {
 			Message msg = antiMessages.poll();
 			RemoteEngine remote = getPeer(msg.id);
+			System.out.println("Trying to send antimessage to: " + msg.id);
+			msg.print();
 			storeUnack(msg);
-			msg.sendMessage(remote.out);
+			if (remote == null) {
+				System.out.println("Can't find who to send antimessage to: " + msg.id);
+			} else {
+				msg.sendMessage(remote.out);
+			}
 		}
 
 		this.turn = turn;
@@ -130,10 +136,16 @@ public class LocalEngine extends Engine {
 	}
 
 	public RemoteEngine getPeer(String id) {
+		System.out.println("I am " + getID() + " Getting peer: " + id);
 		for (RemoteEngine re : peerList) {
-			if (re.getID() == id)
+			if (re.getID().equals(id)) {
+				System.out.println("Found it: " + re);
 				return re;
+			} else {
+				System.out.println("It's not: " + re + " which has id " + re.getID());
+			}
 		}
+		System.out.println("Failed to find peer " + id);
 		return null;
 	}
 
